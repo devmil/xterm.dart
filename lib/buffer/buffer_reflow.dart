@@ -140,7 +140,6 @@ class BufferReflow {
       }
 
       _buffer.adjustSavedCursor(0, linesToAdd);
-      //TODO: maybe row count has to be handled here?
     }
 
     _rearrange(toInsert, countToInsert);
@@ -161,8 +160,6 @@ class BufferReflow {
       int originalLineIndex = originalLinesLength - 1;
       int nextToInsertIndex = 0;
       InsertionSet nextToInsert = toInsert[nextToInsertIndex];
-
-      //TODO: remove rows that now are "too much"
 
       int countInsertedSoFar = 0;
       for (int i = originalLinesLength + countToInsert - 1; i >= 0; i--) {
