@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:xterm/xterm.dart';
+import 'package:xterm/terminal/terminal_ui_interaction.dart';
 
 abstract class InputBehavior {
   const InputBehavior();
@@ -9,9 +9,9 @@ abstract class InputBehavior {
 
   TextEditingValue get initEditingState;
 
-  void onKeyStroke(RawKeyEvent event, Terminal terminal);
+  void onKeyStroke(RawKeyEvent event, TerminalUiInteraction terminal);
 
-  TextEditingValue? onTextEdit(TextEditingValue value, Terminal terminal);
+  TextEditingValue? onTextEdit(TextEditingValue value, TerminalUiInteraction terminal);
 
-  void onAction(TextInputAction action, Terminal terminal);
+  void onAction(TextInputAction action, TerminalUiInteraction terminal);
 }
