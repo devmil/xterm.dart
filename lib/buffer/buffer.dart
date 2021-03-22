@@ -291,10 +291,7 @@ class Buffer {
       }
 
       // clean extra lines if needed.
-      final maxLines = terminal.maxLines;
-      if (maxLines != null && lines.length > maxLines) {
-        lines.removeRange(0, lines.length - maxLines);
-      }
+      trimLines();
     } else {
       // there're still lines so we simply move cursor down.
       moveCursorY(1);
@@ -524,6 +521,13 @@ class Buffer {
     lines.removeAt(index);
   }
 
+  void trimLines() {
+    final maxLines = terminal.maxLines;
+    if (maxLines != null && lines.length > maxLines) {
+      lines.removeRange(0, lines.length - maxLines);
+    }
+  }
+
   void resize(
       int width, int height, int oldWidth, int oldHeight, bool doReflow) {
     if (this.lines.length > 0) {
@@ -551,6 +555,7 @@ class Buffer {
     if (doReflow) {
       final rf = BufferReflow(this);
       rf.doReflow(oldWidth, width);
+      trimLines();
     }
   }
 }
