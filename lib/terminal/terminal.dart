@@ -189,6 +189,15 @@ class Terminal with Observable {
   int get cursorY => buffer.cursorY;
   int get scrollOffset => buffer.scrollOffsetFromBottom;
 
+  void setScrollOffsetFromBottom(int scrollOffset) {
+    final oldOffset = _buffer.scrollOffsetFromBottom;
+    _buffer.setScrollOffsetFromBottom(scrollOffset);
+    if (oldOffset != scrollOffset) {
+      _dirty = true;
+      refresh();
+    }
+  }
+
   /// Writes data to the terminal. Terminal sequences and special characters are
   /// interpreted.
   ///
@@ -337,6 +346,10 @@ class Terminal with Observable {
     _viewWidth = max(newWidth, 1);
     _viewHeight = max(newHeight, 1);
 
+    if (oldWidth == newWidth && oldHeight == newHeight) {
+      return;
+    }
+
     _altBuffer.resize(_viewWidth, _viewHeight, oldWidth, oldHeight, false);
     _mainBuffer.resize(_viewWidth, _viewHeight, oldWidth, oldHeight,
         true /* might be a setting for the terminal */);
@@ -346,6 +359,8 @@ class Terminal with Observable {
     }
 
     buffer.resetVerticalMargins();
+    _dirty = true;
+    refresh();
   }
 
   void keyInput(

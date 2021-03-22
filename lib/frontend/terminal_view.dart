@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:xterm/buffer/cell.dart';
 import 'package:xterm/frontend/char_size.dart';
 import 'package:xterm/frontend/helpers.dart';
 import 'package:xterm/frontend/input_behavior.dart';
@@ -301,9 +300,7 @@ class _TerminalViewState extends State<TerminalView> {
     final topOffset = (offset / _cellSize.cellHeight).ceil();
     final bottomOffset = widget.terminal.lastState!.invisibleHeight - topOffset;
 
-    setState(() {
-      widget.terminal.setScrollOffsetFromBottom(bottomOffset);
-    });
+    widget.terminal.setScrollOffsetFromBottom(bottomOffset);
   }
 }
 
@@ -347,25 +344,27 @@ class TerminalPainter extends CustomPainter {
       return;
     }
     final lines = terminal.lastState!.visibleLines;
+    lines.addUsage();
 
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      final offsetY = i * charSize.cellHeight;
-      final cellCount = math.min(terminal.lastState!.viewWidth, line.length);
+    for (var y = 0; y < terminal.lastState!.viewHeight; y++) {
+      final offsetY = y * charSize.cellHeight;
+      final cellCount = terminal.lastState!.viewWidth;
 
-      for (var i = 0; i < cellCount; i++) {
-        final cell = line.getCell(i);
-        final attr = cell.attr;
-
-        if (attr == null || cell.width == 0) {
+      for (var x = 0; x < cellCount; x++) {
+        final cellWidth = lines.widthAt(x, y);
+        if (!lines.hasData(x, y) || cellWidth == 0) {
           continue;
         }
 
-        final offsetX = i * charSize.cellWidth;
-        final effectWidth = charSize.cellWidth * cell.width + 1;
+        final offsetX = x * charSize.cellWidth;
+        final effectWidth = charSize.cellWidth * cellWidth + 1;
         final effectHeight = charSize.cellHeight + 1;
 
-        final bgColor = attr.inverse ? attr.fgColor : attr.bgColor;
+        final cellInverse = lines.isInverseAt(x, y);
+        final cellFgColor = lines.fgColorAt(x, y);
+        final cellBgColor = lines.bgColorAt(x, y);
+
+        final bgColor = cellInverse ? cellFgColor : cellBgColor;
 
         if (bgColor == null) {
           continue;
@@ -378,6 +377,7 @@ class TerminalPainter extends CustomPainter {
         );
       }
     }
+    lines.removeUsage();
   }
 
   void _paintSelection(Canvas canvas) {
@@ -422,71 +422,84 @@ class TerminalPainter extends CustomPainter {
       return;
     }
     final lines = terminal.lastState!.visibleLines;
+    lines.addUsage();
 
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      final offsetY = i * charSize.cellHeight;
-      final cellCount = math.min(terminal.lastState!.viewWidth, line.length);
+    for (var y = 0; y < terminal.lastState!.viewHeight; y++) {
+      final offsetY = y * charSize.cellHeight;
+      final cellCount = terminal.lastState!.viewWidth;
 
-      for (var i = 0; i < cellCount; i++) {
-        final cell = line.getCell(i);
-
-        if (cell.attr == null || cell.width == 0) {
+      for (var x = 0; x < cellCount; x++) {
+        final cellWidth = lines.widthAt(x, y);
+        if (!lines.hasData(x, y) || cellWidth == 0) {
           continue;
         }
 
-        final offsetX = i * charSize.cellWidth;
-        _paintCell(canvas, cell, offsetX, offsetY);
+        final offsetX = x * charSize.cellWidth;
+        _paintCell(canvas, lines, x, y, offsetX, offsetY);
       }
     }
+    lines.removeUsage();
   }
 
-  void _paintCell(Canvas canvas, Cell cell, double offsetX, double offsetY) {
-    final attr = cell.attr!;
+  void _paintCell(Canvas canvas, UiBufferLines lines, int x, int y,
+      double offsetX, double offsetY) {
+    final cellCodePoint = lines.codePointAt(x, y);
+    final cellInvisible = lines.isInvisibleAt(x, y);
 
-    if (cell.codePoint == null || attr.invisible) {
+    if (cellCodePoint == 0 || cellInvisible) {
       return;
     }
 
-    final cellHash = hashValues(cell.codePoint, attr);
+    final cellFgColor = lines.fgColorAt(x, y);
+    final cellBgColor = lines.bgColorAt(x, y);
+    final cellFlags = lines.flagsAt(x, y);
+
+    final cellHash =
+        hashValues(cellCodePoint, cellFgColor, cellBgColor, cellFlags);
     var tp = textLayoutCache.getLayoutFromCache(cellHash);
     if (tp != null) {
       tp.paint(canvas, Offset(offsetX, offsetY));
       return;
     }
 
-    final cellColor = attr.inverse
-        ? attr.bgColor ?? terminal.theme.background
-        : attr.fgColor ?? terminal.theme.foreground;
+    final cellInverse = lines.isInverseAt(x, y);
+    final cellFaint = lines.isFaintAt(x, y);
+    final cellBold = lines.isBoldAt(x, y);
+    final cellItalic = lines.isItalicAt(x, y);
+    final cellUnderline = lines.isUnderlineAt(x, y);
+
+    final cellColor = cellInverse
+        ? cellBgColor ?? terminal.theme.background
+        : cellFgColor ?? terminal.theme.foreground;
 
     var color = Color(cellColor.value);
 
-    if (attr.faint) {
+    if (cellFaint) {
       color = color.withOpacity(0.5);
     }
 
     final style = (view.style.textStyleProvider != null)
         ? view.style.textStyleProvider!(
             color: color,
-            fontWeight: attr.bold ? FontWeight.bold : FontWeight.normal,
-            fontStyle: attr.italic ? FontStyle.italic : FontStyle.normal,
+            fontWeight: cellBold ? FontWeight.bold : FontWeight.normal,
+            fontStyle: cellItalic ? FontStyle.italic : FontStyle.normal,
             fontSize: view.style.fontSize,
             decoration:
-                attr.underline ? TextDecoration.underline : TextDecoration.none,
+                cellUnderline ? TextDecoration.underline : TextDecoration.none,
           )
         : TextStyle(
             color: color,
-            fontWeight: attr.bold ? FontWeight.bold : FontWeight.normal,
-            fontStyle: attr.italic ? FontStyle.italic : FontStyle.normal,
+            fontWeight: cellBold ? FontWeight.bold : FontWeight.normal,
+            fontStyle: cellItalic ? FontStyle.italic : FontStyle.normal,
             fontSize: view.style.fontSize,
             decoration:
-                attr.underline ? TextDecoration.underline : TextDecoration.none,
+                cellUnderline ? TextDecoration.underline : TextDecoration.none,
             fontFamily: 'monospace',
             fontFamilyFallback: view.style.fontFamily,
           );
 
     final span = TextSpan(
-      text: String.fromCharCode(cell.codePoint!),
+      text: String.fromCharCode(cellCodePoint),
       // text: codePointCache.getOrConstruct(cell.codePoint),
       style: style,
     );
@@ -507,9 +520,10 @@ class TerminalPainter extends CustomPainter {
       return;
     }
 
-    final char = terminal.lastState!.cellUnderCursor;
-    final width =
-        char != null ? charSize.cellWidth * char.width : charSize.cellWidth;
+    final cellWidthUnderCursor = terminal.lastState!.cellWidthUnderCursor;
+    final width = cellWidthUnderCursor != null
+        ? charSize.cellWidth * cellWidthUnderCursor
+        : charSize.cellWidth;
 
     final offsetX = charSize.cellWidth * terminal.lastState!.cursorX;
     final offsetY = charSize.cellHeight * screenCursorY;
