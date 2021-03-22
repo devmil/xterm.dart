@@ -224,8 +224,12 @@ class Terminal with Observable {
       const esc = 0x1b;
       final char = _queue.removeFirst();
 
-      if (char == esc && _queue.isNotEmpty) {
-        ansiHandler(_queue, this);
+      if (char == esc) {
+        try {
+          ansiHandler(_queue, this);
+        } catch (err) {
+          print(err);
+        }
         continue;
       }
 
