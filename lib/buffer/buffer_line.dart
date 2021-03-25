@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:xterm/buffer/char_data.dart';
 
 class BufferLine {
@@ -16,7 +15,7 @@ class BufferLine {
 
   BufferLine._(this._data, this.isWrapped);
 
-  static BufferLine copyFrom(BufferLine other) {
+  static BufferLine createFrom(BufferLine other) {
     return BufferLine._(
         List<CharData>.generate(other._data.length,
             (index) => CharData.createFrom(other._data[index])),
