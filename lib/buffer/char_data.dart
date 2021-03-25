@@ -9,6 +9,11 @@ class CharData {
   CharData(this.attribute,
       {this.rune = '\u0200', this.width = 1, this.code = 0});
 
+  static CharData createFrom(CharData other) {
+    return CharData(other.attribute,
+        rune: other.rune, width: other.width, code: other.code);
+  }
+
   // ((int)flags << 18) | (fg << 9) | bg;
   static const int DefaultAttr = Renderer.DefaultColor << 9 | (256 << 0);
   static const int InvertedAttr = Renderer.InvertedDefaultColor << 9 |
@@ -34,6 +39,13 @@ class CharData {
   static CharData period =
       new CharData(DefaultAttr, rune: '.', width: 1, code: 46);
 
+  void copyFrom(CharData other) {
+    this.attribute = other.attribute;
+    this.rune = other.rune;
+    this.width = other.width;
+    this.code = other.code;
+  }
+
   /// Returns true if this CharData matches the given Rune, irrespective of character attributes
   bool matchesRune(String rune) {
     return this.rune == rune;
@@ -44,7 +56,7 @@ class CharData {
     return rune == chr.rune;
   }
 
-  bool isNullChar() {
-    return rune == nul.rune || code == 0;
-  }
+  bool get isNullChar => rune == nul.rune || code == 0;
+
+  bool get hasContent => code != 0 || attribute != CharData.DefaultAttr;
 }
