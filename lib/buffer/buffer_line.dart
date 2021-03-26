@@ -150,7 +150,7 @@ class BufferLine {
   }
 
   String translateToString(
-      {bool trimRight = false, int startCol = 0, int endCol = -1}) {
+      [bool trimRight = false, int startCol = 0, int endCol = -1]) {
     if (endCol == -1) {
       endCol = _data.length;
     }

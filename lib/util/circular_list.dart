@@ -2,12 +2,10 @@ class CircularList<T> {
   List<T?> _array;
   int _length = 0;
   int _startIndex = 0;
-  T Function() _itemFactory;
 
   Function(int num)? onTrimmed;
 
-  CircularList(int maxLength, this._itemFactory)
-      : _array = List<T?>.filled(maxLength, null);
+  CircularList(int maxLength) : _array = List<T?>.filled(maxLength, null);
 
   // Gets the cyclic index for the specified regular index. The cyclic index can then be used on the
   // backing array to get the element associated with the regular index.
@@ -43,7 +41,7 @@ class CircularList<T> {
   set length(int value) {
     if (value > _length) {
       for (int i = length; i < value; i++) {
-        _array[i] = _itemFactory();
+        _array[i] = null;
       }
     }
     _length = value;
@@ -55,11 +53,11 @@ class CircularList<T> {
     }
   }
 
-  T operator [](int index) {
-    return _array[_getCyclicIndex(index)]!;
+  T? operator [](int index) {
+    return _array[_getCyclicIndex(index)];
   }
 
-  operator []=(int index, T value) {
+  operator []=(int index, T? value) {
     _array[_getCyclicIndex(index)] = value;
   }
 
@@ -76,13 +74,13 @@ class CircularList<T> {
     }
   }
 
-  T recycle() {
+  T? recycle() {
     if (length != maxLength) {
       throw Exception('Can only recycle when the buffer is full');
     }
     _startIndex = ++_startIndex & maxLength;
 
-    return _array[_getCyclicIndex(length - 1)]!;
+    return _array[_getCyclicIndex(length - 1)];
   }
 
   /// Removes and returns the last value on the list
