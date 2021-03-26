@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:xterm/buffer/buffer_line.dart';
 import 'package:xterm/buffer/char_data.dart';
+import 'package:xterm/buffer/reflow_strategy.dart';
+import 'package:xterm/buffer/reflow_strategy_narrower.dart';
+import 'package:xterm/buffer/reflow_strategy_wider.dart';
 import 'package:xterm/terminal/terminal.dart';
 import 'package:xterm/util/bit_array.dart';
 import 'package:xterm/util/circular_list.dart';
@@ -10,12 +13,12 @@ class Buffer {
   late CircularList<BufferLine> _lines;
   int _scrollTop;
   int _scrollBottom;
-  int _yDisp;
-  int _yBase;
-  int _x;
+  int yDisp;
+  int yBase;
+  int x;
   int _y;
-  int _savedX = 0;
-  int _savedY = 0;
+  int savedX = 0;
+  int savedY = 0;
   int _savedAttr = CharData.DefaultAttr;
   BitArray _tabStops = BitArray(0);
 
@@ -36,9 +39,9 @@ class Buffer {
         _marginRight = _terminal.cols - 1,
         _scrollTop = 0,
         _scrollBottom = _terminal.rows - 1,
-        _yDisp = 0,
-        _yBase = 0,
-        _x = 0,
+        yDisp = 0,
+        yBase = 0,
+        x = 0,
         _y = 0 {
     _lines = CircularList<BufferLine>(_getCorrectBufferLength(
         _rows, _hasScrollback, _terminal.options.scrollback));
@@ -82,7 +85,6 @@ class Buffer {
   /// Gets the right margin, 0 based
   int get marginRight => _marginRight;
 
-  int get x => _x;
   int get y => _y;
 
   set y(int value) {
@@ -120,9 +122,9 @@ class Buffer {
   }
 
   void clear() {
-    _yDisp = 0;
-    _yBase = 0;
-    _x = 0;
+    yDisp = 0;
+    yBase = 0;
+    x = 0;
     _y = 0;
     _lines = CircularList<BufferLine>(_getCorrectBufferLength(
         _terminal.rows, _hasScrollback, _terminal.options.scrollback));
@@ -132,8 +134,8 @@ class Buffer {
   }
 
   bool get isCursorInViewPort {
-    final absoluteY = _yBase + y;
-    final relativeY = absoluteY - _yDisp;
+    final absoluteY = yBase + y;
+    final relativeY = absoluteY - yDisp;
     return (relativeY >= 0 && relativeY < _terminal.rows);
   }
 
@@ -144,14 +146,14 @@ class Buffer {
   }
 
   void saveCursor(int curAttr) {
-    _savedX = _x;
-    _savedY = _y;
+    savedX = x;
+    savedY = _y;
     _savedAttr = curAttr;
   }
 
   int restoreCursor() {
-    _x = _savedX;
-    _y = _savedY;
+    x = savedX;
+    _y = savedY;
     return _savedAttr;
   }
 
@@ -187,15 +189,15 @@ class Buffer {
       int addToY = 0;
       if (_rows < newRows) {
         for (int y = _rows; y < newRows; y++) {
-          if (_lines.length < newRows + _yBase) {
-            if (_yBase > 0 && _lines.length <= _yBase + _y + addToY + 1) {
+          if (_lines.length < newRows + yBase) {
+            if (yBase > 0 && _lines.length <= yBase + _y + addToY + 1) {
               // There is room above the buffer and there are no empty elements below the line,
               // scroll up
-              _yBase--;
+              yBase--;
               addToY++;
-              if (_yDisp > 0) {
+              if (yDisp > 0) {
                 // Viewport is at the top of the buffer, must increase downwards
-                _yDisp--;
+                yDisp--;
               }
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
@@ -206,14 +208,14 @@ class Buffer {
         }
       } else {
         for (int y = _rows; y > newRows; y--) {
-          if (_lines.length > newRows + _yBase) {
-            if (_lines.length > _yBase + _y + 1) {
+          if (_lines.length > newRows + yBase) {
+            if (_lines.length > yBase + _y + 1) {
               // The line is a blank line below the cursor, remove it
               _lines.pop();
             } else {
               // The line is the cursor, scroll down
-              _yBase++;
-              _yDisp++;
+              yBase++;
+              yDisp++;
             }
           }
         }
@@ -226,22 +228,22 @@ class Buffer {
         int amountToTrim = _lines.length - newMaxLength;
         if (amountToTrim > 0) {
           _lines.trimStart(amountToTrim);
-          _yBase = max(_yBase - amountToTrim, 0);
-          _yDisp = max(_yDisp - amountToTrim, 0);
-          _savedY = max(_savedY - amountToTrim, 0);
+          yBase = max(yBase - amountToTrim, 0);
+          yDisp = max(yDisp - amountToTrim, 0);
+          savedY = max(savedY - amountToTrim, 0);
         }
 
         _lines.maxLength = newMaxLength;
       }
 
       // Make sure that the cursor stays on screen
-      _x = min(_x, newCols - 1);
-      _y = min(_y, newRows - 1);
+      x = min(x, newCols - 1);
+      y = min(y, newRows - 1);
       if (addToY != 0) {
-        _y += addToY;
+        y += addToY;
       }
 
-      _savedX = min(_savedX, newCols - 1);
+      savedX = min(savedX, newCols - 1);
 
       _scrollTop = 0;
     }
@@ -315,7 +317,7 @@ class Buffer {
 
   int previousTabStop([int index = -1]) {
     if (index == -1) {
-      index = _x;
+      index = x;
     }
     while (index > 0 && !_tabStops[index]) {
       index--;
@@ -326,7 +328,7 @@ class Buffer {
   int nextTabStop([int index = -1]) {
     final limit = _terminal.marginMode ? _marginRight : (_cols - 1);
     if (index == -1) {
-      index = _x;
+      index = x;
     }
 
     do {
@@ -343,7 +345,15 @@ class Buffer {
   }
 
   void reflow(int newCols, int newRows) {
-    //TODO
-    print('Reflow!!');
+    if (cols == newCols) {
+      return;
+    }
+
+    // Iterate through rows, ignore the last one as it cannot be wrapped
+    ReflowStrategy strategy = (newCols > cols)
+        ? ReflowStrategyWider(this)
+        : ReflowStrategyNarrower(this);
+
+    strategy.reflow(newCols, newRows, cols, rows);
   }
 }
