@@ -19,7 +19,7 @@ class Buffer {
   int _y;
   int savedX = 0;
   int savedY = 0;
-  int _savedAttr = CharData.DefaultAttr;
+  int savedAttr = CharData.DefaultAttr;
   BitArray _tabStops = BitArray(0);
 
   Terminal _terminal;
@@ -148,13 +148,13 @@ class Buffer {
   void saveCursor(int curAttr) {
     savedX = x;
     savedY = _y;
-    _savedAttr = curAttr;
+    savedAttr = curAttr;
   }
 
   int restoreCursor() {
     x = savedX;
     _y = savedY;
-    return _savedAttr;
+    return savedAttr;
   }
 
   void fillViewportRows([int? attribute = null]) {
