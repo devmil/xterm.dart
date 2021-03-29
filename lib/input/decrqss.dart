@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:xterm/buffer/char_attribute_utils.dart';
 import 'package:xterm/input/escape_sequence_parser.dart';
 import 'package:xterm/xterm.dart';
 
@@ -26,7 +27,7 @@ class DECRQSS implements IDcsHandler {
     var newData = utf8Decoder.convert(_data);
     int ok =
         1; // 0 means the request is valid according to docs, but tests expect 0?
-    String? result = null;
+    String? result;
 
     switch (newData) {
       case "\"q": // DECCSA - Set Character Attribute
@@ -41,7 +42,7 @@ class DECRQSS implements IDcsHandler {
         break;
       case "m": // SGR- the set graphic rendition
         // TODO: report real settings instead of 0m
-        result = CharacterAttribute.ToSGR(_terminal.curAttr);
+        result = CharAttributeUtils.toSGR(_terminal.curAttr);
         break;
       case "s": // DECSLRM - the current left and right margins
         result =
@@ -50,17 +51,17 @@ class DECRQSS implements IDcsHandler {
       case " q": // DECSCUSR - the set cursor style
         // TODO this should send a number for the current cursor style 2 for block, 4 for underline and 6 for bar
         var style = "2"; // block
-        result = "${style} q";
+        result = "$style q";
         break;
       default:
         ok = 0; // this means the request is not valid, report that to the host.
         result = '';
         // invalid: DCS 0 $ r Pt ST (xterm)
-        _terminal.error("Unknown DCS + ${newData}");
+        _terminal.error("Unknown DCS + $newData");
         break;
     }
 
     _terminal.sendResponse(
-        "${_terminal.controlCodes.dcs}${ok}\$r${result}${_terminal.controlCodes.st}");
+        "${_terminal.controlCodes.dcs}$ok\$r$result${_terminal.controlCodes.st}");
   }
 }
