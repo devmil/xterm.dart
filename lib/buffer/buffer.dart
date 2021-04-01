@@ -92,7 +92,7 @@ class Buffer {
       print(
           'Terminal Buffer error: Y cannot be outside the bounds of the terminal rows. Y: ${_y}, Rows: ${_terminal.rows}');
     } else {
-      y = value;
+      _y = value;
     }
   }
 

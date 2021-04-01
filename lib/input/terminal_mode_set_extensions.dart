@@ -124,6 +124,7 @@ extension TerminalModeSetExtensions on Terminal {
             this.resize(132, this.rows);
             this.reset();
             this.delegate.sizeChanged(this);
+            this.notifyListeners();
           }
           break;
         case 5:
@@ -328,6 +329,7 @@ extension TerminalModeSetExtensions on Terminal {
             this.resize(80, this.rows);
             this.delegate.sizeChanged(this);
             this.reset();
+            this.notifyListeners();
           }
           break;
         case 5:

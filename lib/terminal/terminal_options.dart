@@ -1,5 +1,5 @@
 class TerminalOptions {
-  int get scrollback => 5000;
+  int scrollback = 5000;
   int get tabStopWidth => 8;
   int cols = 80;
   int rows = 25;

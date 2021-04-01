@@ -14,8 +14,9 @@ import 'package:xterm/terminal/char_sets.dart';
 import 'package:xterm/terminal/control_codes.dart';
 import 'package:xterm/terminal/terminal_delegate.dart';
 import 'package:xterm/terminal/terminal_options.dart';
+import 'package:xterm/util/observable.dart';
 
-class Terminal {
+class Terminal with Observable {
   static const int MINIMUM_COLS = 2;
   static const int MINIMUM_ROWS = 1;
 
@@ -186,9 +187,11 @@ class Terminal {
 
     if (_refreshStart == null || y < _refreshStart!) {
       _refreshStart = y;
+      notifyListeners();
     }
     if (_refreshEnd == null || y > _refreshEnd!) {
       _refreshEnd = y;
+      notifyListeners();
     }
   }
 

@@ -44,8 +44,6 @@ enum ParserAction {
 }
 
 extension ParserActionExtension on ParserAction {
-  static bool _initialized = false;
-
   static Map<ParserAction, int> _parserActionValueMap = {
     ParserAction.Ignore: 0,
     ParserAction.Error: 1,
@@ -63,16 +61,16 @@ extension ParserActionExtension on ParserAction {
     ParserAction.DcsPut: 13,
     ParserAction.DcsUnhook: 14,
   };
-  static late Map<int, ParserAction> _valueParserActionMap;
+  static Map<int, ParserAction>? _valueParserActionMap = null;
 
   static ensureInitialized() {
-    if (_initialized) {
+    if (_valueParserActionMap != null) {
       return;
     }
+    _valueParserActionMap = Map<int, ParserAction>();
     for (final entry in _parserActionValueMap.entries) {
-      _valueParserActionMap[entry.value] = entry.key;
+      _valueParserActionMap![entry.value] = entry.key;
     }
-    _initialized = true;
   }
 
   int get value {
@@ -82,7 +80,7 @@ extension ParserActionExtension on ParserAction {
 
   static ParserAction fromValue(int value) {
     ensureInitialized();
-    return _valueParserActionMap[value]!;
+    return _valueParserActionMap![value]!;
   }
 }
 
@@ -105,8 +103,6 @@ enum ParserState {
 }
 
 extension ParserStateExtension on ParserState {
-  static bool _initialized = false;
-
   static Map<ParserState, int> _parserStateValueMap = {
     ParserState.Invalid: -1,
     ParserState.Ground: 0,
@@ -124,16 +120,16 @@ extension ParserStateExtension on ParserState {
     ParserState.DcsIntermediate: 12,
     ParserState.DcsPassthrough: 13,
   };
-  static late Map<int, ParserState> _valueParserStateMap;
+  static Map<int, ParserState>? _valueParserStateMap = null;
 
   static ensureInitialized() {
-    if (_initialized) {
+    if (_valueParserStateMap != null) {
       return;
     }
+    _valueParserStateMap = Map<int, ParserState>();
     for (final entry in _parserStateValueMap.entries) {
-      _valueParserStateMap[entry.value] = entry.key;
+      _valueParserStateMap![entry.value] = entry.key;
     }
-    _initialized = true;
   }
 
   int get value {
@@ -141,9 +137,9 @@ extension ParserStateExtension on ParserState {
     return _parserStateValueMap[this]!;
   }
 
-  static ParserState fromValue(int value) {
+  static ParserState? fromValue(int value) {
     ensureInitialized();
-    return _valueParserStateMap[value]!;
+    return _valueParserStateMap![value];
   }
 }
 
@@ -234,14 +230,14 @@ class EscapeSequenceParser {
 
   static List<ParserState> rp(ParserState low, ParserState high) =>
       List<ParserState>.generate(high.value - low.value,
-          (index) => ParserStateExtension.fromValue(low.value + index));
+          (index) => ParserStateExtension.fromValue(low.value + index)!);
 
   static const int NonAsciiPrintable = 0xa0;
 
   static TransitionTable buildVt500TransitionTable() {
     var table = new TransitionTable(4095);
     var states = rp(ParserState.Ground,
-        ParserStateExtension.fromValue(ParserState.DcsPassthrough.value + 1));
+        ParserStateExtension.fromValue(ParserState.DcsPassthrough.value)!);
 
     // table with default transition
     for (var state in states) {
@@ -754,7 +750,7 @@ class EscapeSequenceParser {
           printStateReset();
           break;
       }
-      currentState = ParserStateExtension.fromValue(transition & 15);
+      currentState = ParserStateExtension.fromValue(transition & 15)!;
     }
     // push leftover pushable buffers to terminal
     if (currentState == ParserState.Ground && (~print != 0)) {

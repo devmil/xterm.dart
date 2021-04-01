@@ -161,6 +161,25 @@ class SelectionService {
     return buffer.toString();
   }
 
+  bool contains(Point p) {
+    if (!isActive) {
+      return false;
+    }
+    if (_start!.y > p.y) {
+      return false;
+    }
+    if (_end!.y < p.y) {
+      return false;
+    }
+    if (_start!.y == p.y && _start!.x > p.x) {
+      return false;
+    }
+    if (_end!.y == p.y && _end!.x < p.x) {
+      return false;
+    }
+    return true;
+  }
+
   List<Line> getSelectedLines() {
     var localStart = start;
     var localEnd = end;

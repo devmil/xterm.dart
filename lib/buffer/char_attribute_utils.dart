@@ -45,30 +45,75 @@ extension CharAttributeFlagsExtensions on CharAttributeFlags {
 }
 
 class CharAttributeUtils {
+  static int getFgColor(int attribute) {
+    return (attribute >> 9) & 0x1ff;
+  }
+
+  static int getBgColor(int attribute) {
+    return attribute & 0x1ff;
+  }
+
+  static bool isBold(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(ca, CharAttributeFlags.Bold);
+  }
+
+  static bool isItalic(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(
+        ca, CharAttributeFlags.Italic);
+  }
+
+  static bool isUnderline(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(
+        ca, CharAttributeFlags.Underline);
+  }
+
+  static bool isBlink(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(
+        ca, CharAttributeFlags.Blink);
+  }
+
+  static bool isInverse(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(
+        ca, CharAttributeFlags.Inverse);
+  }
+
+  static bool isInvisible(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(
+        ca, CharAttributeFlags.Invisible);
+  }
+
+  static bool isDim(int attribute) {
+    var ca = (attribute >> 18);
+    return CharAttributeFlagsExtensions.intHasFlag(ca, CharAttributeFlags.Dim);
+  }
+
   static String toSGR(int attribute) {
     var result = '0';
 
     var ca = (attribute >> 18);
-    if (CharAttributeFlagsExtensions.intHasFlag(ca, CharAttributeFlags.Bold)) {
+    if (isBold(attribute)) {
       result += ';1';
     }
-    if (CharAttributeFlagsExtensions.intHasFlag(
-        ca, CharAttributeFlags.Underline)) {
+    if (isUnderline(attribute)) {
       result += ';4';
     }
-    if (CharAttributeFlagsExtensions.intHasFlag(ca, CharAttributeFlags.Blink)) {
+    if (isBlink(attribute)) {
       result += ';5';
     }
-    if (CharAttributeFlagsExtensions.intHasFlag(
-        ca, CharAttributeFlags.Inverse)) {
+    if (isInverse(attribute)) {
       result += ';7';
     }
-    if (CharAttributeFlagsExtensions.intHasFlag(
-        ca, CharAttributeFlags.Invisible)) {
+    if (isInvisible(attribute)) {
       result += ';8';
     }
 
-    int fg = (attribute >> 9) & 0x1ff;
+    int fg = getFgColor(attribute);
 
     if (fg != Renderer.DefaultColor) {
       if (fg > 16) {
@@ -82,7 +127,7 @@ class CharAttributeUtils {
       }
     }
 
-    int bg = attribute & 0x1ff;
+    int bg = getBgColor(attribute);
     if (bg != Renderer.DefaultColor) {
       if (bg > 16) {
         result += ';48;5;$bg';

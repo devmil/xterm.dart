@@ -14,7 +14,7 @@ class CharSets {
   }
 
   static _initialize() {
-    _all = new Map<int, Map<int, String>>();
+    _all = new Map<int, Map<int, String>?>();
 
     _all![2] = {' '.runes.first: 'test', 'a'.runes.first: 'test2'};
 
