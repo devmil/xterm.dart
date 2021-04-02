@@ -45,7 +45,7 @@ class ReflowStrategyWider extends ReflowStrategy {
       }
 
       // Check how many lines it's wrapped for
-      final wrappedLines = List<BufferLine>.empty(growable: false);
+      final wrappedLines = List<BufferLine>.empty(growable: true);
       wrappedLines.add(lines[y]!);
       while (i < lines.length && nextLine.isWrapped) {
         wrappedLines.add(nextLine);

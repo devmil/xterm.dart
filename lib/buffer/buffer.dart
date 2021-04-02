@@ -118,7 +118,8 @@ class Buffer {
   }
 
   BufferLine getBlankLine(int attribute, [bool isWrapped = false]) {
-    return BufferLine(_terminal.cols, CharData(attribute));
+    return BufferLine(_terminal.cols, CharData(attribute),
+        isWrapped: isWrapped);
   }
 
   void clear() {

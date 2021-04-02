@@ -127,20 +127,28 @@ class BufferLine {
   }
 
   void copyFromRange(BufferLine source, int sourceCol, int destCol, int len) {
-    for (int i = 0; i < len; i++) {
-      final sourceIdx = sourceCol + i;
-      final destIdx = destCol + i;
+    List<int> indexList = List<int>.generate(len, (index) => index);
+    Iterable<int> iterationList = indexList;
+    // we might copy data in one instance
+    // =>when destCol > sourceCol we go backward, otherwise forward
+    if (destCol > sourceCol) {
+      iterationList = indexList.reversed;
+    }
+    iterationList.forEach((idx) {
+      final sourceIdx = sourceCol + idx;
+      final destIdx = destCol + idx;
+
       if (destIdx < _data.length && sourceIdx < source._data.length) {
         _data[destIdx].copyFrom(source._data[sourceIdx]);
       }
-    }
+    });
   }
 
   int get trimmedLength {
     for (int i = _data.length - 1; i >= 0; --i) {
       if (_data[i].code != 0) {
         var width = 0;
-        for (int j = 0; i <= i; j++) {
+        for (int j = 0; j <= i; j++) {
           width += _data[i].width;
         }
         return width;
