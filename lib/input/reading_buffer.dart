@@ -13,7 +13,7 @@ class ReadingBuffer {
       length = data.length;
     }
     _index = 0;
-    _bufferStart = 0;
+    _bufferStart = bufferStart;
     _totalCount = _putbackBuffer.length + length;
   }
 
