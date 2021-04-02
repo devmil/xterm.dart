@@ -17,11 +17,14 @@ import 'package:xterm/frontend/input_behaviors.dart';
 import 'package:xterm/frontend/input_listener.dart';
 import 'package:xterm/frontend/cache.dart';
 import 'package:xterm/input/mouse_mode.dart';
+import 'package:xterm/input/terminal_color_code.dart';
 import 'package:xterm/renderer/renderer.dart';
 import 'package:xterm/terminal/selection_service.dart';
 import 'package:xterm/terminal/terminal.dart';
 import 'package:xterm/terminal/terminal_delegate.dart';
+import 'package:xterm/theme/terminal_color.dart';
 import 'package:xterm/theme/terminal_style.dart';
+import 'package:xterm/theme/terminal_theme.dart';
 import 'package:xterm/theme/terminal_themes.dart';
 
 typedef TerminalResizeHandler = void Function(int width, int height);
@@ -346,6 +349,55 @@ class TerminalPainter extends CustomPainter {
     terminal.clearUpdateRange();
   }
 
+  TerminalColor _getColor(
+      int colorCode, TerminalColor defaultColor, TerminalTheme theme) {
+    if (colorCode == Renderer.DefaultColor) {
+      return defaultColor;
+    }
+    final terminalColorCode = TerminalColorCodeExtension.fromValue(colorCode);
+    if (terminalColorCode != null) {
+      //map terminal color code to theme
+      switch (terminalColorCode) {
+        case TerminalColorCode.Black:
+          return theme.black;
+        case TerminalColorCode.Red:
+          return theme.red;
+        case TerminalColorCode.Green:
+          return theme.green;
+        case TerminalColorCode.Yellow:
+          return theme.yellow;
+        case TerminalColorCode.Blue:
+          return theme.blue;
+        case TerminalColorCode.Magenta:
+          return theme.magenta;
+        case TerminalColorCode.Cyan:
+          return theme.cyan;
+        case TerminalColorCode.White:
+          return theme.white;
+        case TerminalColorCode.BrightBlack:
+          return theme.brightBlack;
+        case TerminalColorCode.BrightRed:
+          return theme.brightRed;
+        case TerminalColorCode.BrightGreen:
+          return theme.brightGreen;
+        case TerminalColorCode.BrightYellow:
+          return theme.brightYellow;
+        case TerminalColorCode.BrightBlue:
+          return theme.brightBlue;
+        case TerminalColorCode.BrightMagenta:
+          return theme.brightMagenta;
+        case TerminalColorCode.BrightCyan:
+          return theme.brightCyan;
+        case TerminalColorCode.BrightWhite:
+          return theme.brightWhite;
+        case TerminalColorCode.Default:
+          return defaultColor;
+      }
+    }
+    //try to extract RGB values
+    return TerminalColor(colorCode);
+  }
+
   void _paintBackground(Canvas canvas) {
     final lines = terminal.buffer.lines;
 
@@ -370,27 +422,31 @@ class TerminalPainter extends CustomPainter {
         final effectHeight = charSize.cellHeight + 1;
 
         final cellInverse = CharAttributeUtils.isInverse(attr);
-        var cellFgColor = CharAttributeUtils.getFgColor(attr);
-        if (cellFgColor == Renderer.DefaultColor) {
-          //TODO: Theme
-          cellFgColor = TerminalThemes.defaultTheme.foreground.value;
-        }
-        var cellBgColor = CharAttributeUtils.getBgColor(attr);
-        if (cellBgColor == Renderer.DefaultColor) {
-          //TODO: Theme
-          cellBgColor = TerminalThemes.defaultTheme.background.value;
-        }
+
+        final fgColorAttr = CharAttributeUtils.getFgColor(attr);
+        final bgColorAttr = CharAttributeUtils.getBgColor(attr);
+        //TODO: Theme
+        var fgColor = _getColor(
+            fgColorAttr,
+            TerminalThemes.defaultTheme.foreground,
+            TerminalThemes.defaultTheme);
+        //TODO: Theme
+        var bgColor = _getColor(
+            bgColorAttr,
+            TerminalThemes.defaultTheme.background,
+            TerminalThemes.defaultTheme);
 
         // background color is already painted with opacity by the Container of
         // TerminalPainter so wo don't need to fallback to
         // terminal.theme.background here.
-        final bgColor = cellInverse ? cellFgColor : cellBgColor;
+        final effectiveBgColorAttr = cellInverse ? fgColorAttr : bgColorAttr;
+        final effectiveBgColor = cellInverse ? fgColor : bgColor;
 
-        if (bgColor == Renderer.DefaultColor) {
+        if (effectiveBgColorAttr == Renderer.DefaultColor) {
           continue;
         }
 
-        final paint = Paint()..color = Color(bgColor);
+        final paint = Paint()..color = Color(effectiveBgColor.value);
         canvas.drawRect(
           Rect.fromLTWH(offsetX, offsetY, effectWidth, effectHeight),
           paint,
@@ -477,20 +533,18 @@ class TerminalPainter extends CustomPainter {
     }
 
     final cellInverse = CharAttributeUtils.isInverse(attr);
-    var cellFgColor = CharAttributeUtils.getFgColor(attr);
-    if (cellFgColor == Renderer.DefaultColor) {
-      //TODO: Theme
-      cellFgColor = TerminalThemes.defaultTheme.foreground.value;
-    }
-    var cellBgColor = CharAttributeUtils.getBgColor(attr);
-    if (cellBgColor == Renderer.DefaultColor) {
-      //TODO: Theme
-      cellBgColor = TerminalThemes.defaultTheme.background.value;
-    }
+    final fgColorAttr = CharAttributeUtils.getFgColor(attr);
+    final bgColorAttr = CharAttributeUtils.getBgColor(attr);
+    //TODO: Theme
+    var fgColor = _getColor(fgColorAttr, TerminalThemes.defaultTheme.foreground,
+        TerminalThemes.defaultTheme);
+    //TODO: Theme
+    var bgColor = _getColor(bgColorAttr, TerminalThemes.defaultTheme.background,
+        TerminalThemes.defaultTheme);
 
-    final cellColor = cellInverse ? cellBgColor : cellFgColor;
+    final effectiveColor = cellInverse ? bgColor : fgColor;
 
-    var color = Color(cellColor);
+    var color = Color(effectiveColor.value);
 
     final cellDim = CharAttributeUtils.isDim(attr);
     final cellBold = CharAttributeUtils.isBold(attr);

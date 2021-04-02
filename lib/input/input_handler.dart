@@ -348,7 +348,7 @@ class InputHandler {
         // includes '/' -> unsupported? (MIGUEL TODO)
         return;
     }
-    _terminal.setgCharset(ch, charset!);
+    _terminal.setgCharset(ch, charset);
   }
 
   //
@@ -642,12 +642,12 @@ class InputHandler {
         bg = p - 40;
       } else if (p >= 90 && p <= 97) {
         // fg color 16
-        p += 8;
-        fg = p - 90;
+        //p += 8;
+        fg = p - 80; //Bright = +10
       } else if (p >= 100 && p <= 107) {
         // bg color 16
-        p += 8;
-        bg = p - 100;
+        // p += 8;
+        bg = p - 90; //Bright = +10
       } else if (p == 0) {
         // default
 
@@ -761,7 +761,7 @@ class InputHandler {
         fg = (def >> 9) & 0x1ff;
         bg = def & 0x1ff;
       } else {
-        _terminal.error("Unknown SGR attribute: %d.", [p]);
+        _terminal.error("Unknown SGR attribute: $p.", [p]);
       }
     }
     _terminal.curAttr = (flags << 18) | (fg << 9) | bg;
