@@ -576,10 +576,11 @@ class EscapeSequenceParser {
             print = -1;
           }
           final callback = executeHandlers[code];
-          if (callback != null)
+          if (callback != null) {
             callback();
-          else
+          } else {
             executeHandlerFallback(code);
+          }
           break;
         case ParserAction.Ignore:
           // handle leftover print or dcs chars
@@ -634,18 +635,17 @@ class EscapeSequenceParser {
           // Trigger CSI handler
           final csiHandlers = this.csiHandlers[code];
           if (csiHandlers != null) {
-            var jj = csiHandlers.length - 1;
-            for (; jj >= 0; jj--) {
-              csiHandlers[jj](pars, collect);
-            }
-          } else
+            csiHandlers.forEach((handler) => handler(pars, collect));
+          } else {
             csiHandlerFallback(collect, pars, code);
+          }
           break;
         case ParserAction.Param:
-          if (code == 0x3b)
+          if (code == 0x3b) {
             pars.add(0);
-          else
+          } else {
             pars[pars.length - 1] = pars[pars.length - 1] * 10 + code - 48;
+          }
           break;
         case ParserAction.Collect:
           // AUDIT: make collect a ustring
@@ -653,10 +653,11 @@ class EscapeSequenceParser {
           break;
         case ParserAction.EscDispatch:
           final ehandler = escHandlers[code];
-          if (ehandler != null)
+          if (ehandler != null) {
             ehandler(collect, code);
-          else
+          } else {
             escHandlerFallback(collect, code);
+          }
           break;
         case ParserAction.Clear:
           if (~print != 0) {
@@ -672,21 +673,26 @@ class EscapeSequenceParser {
           break;
         case ParserAction.DcsHook:
           final dcsHandler = dcsHandlers[code];
-          if (dcsHandler != null)
+          if (dcsHandler != null) {
             dcsHandler.hook(collect, pars, code);
-          else
+          } else {
             dcsHandlerFallback.hook(collect, pars, code);
+          }
           break;
         case ParserAction.DcsPut:
           dcs = (~dcs != 0) ? dcs : i;
           break;
         case ParserAction.DcsUnhook:
           if (dcsHandler != null) {
-            if (~dcs != 0) dcsHandler.put(data, dcs, i);
+            if (~dcs != 0) {
+              dcsHandler.put(data, dcs, i);
+            }
             dcsHandler.unhook();
             dcsHandler = null;
           }
-          if (code == 0x1b) transition |= ParserState.Escape.value;
+          if (code == 0x1b) {
+            transition |= ParserState.Escape.value;
+          }
           osc = '';
           pars.clear();
           pars.add(0);
@@ -707,7 +713,9 @@ class EscapeSequenceParser {
                 (data[j] < 0x20) ||
                 (data[j] > 0x7f && data[j] < 0x9f)) {
               var block = Uint8List(j - (i + 1));
-              for (int k = i + 1; k < j; k++) block[k - i - 1] = data[k];
+              for (int k = i + 1; k < j; k++) {
+                block[k - i - 1] = data[k];
+              }
               osc += utf8Dec.convert(block.toList(growable: false));
 
               i = j - 1;
@@ -738,10 +746,14 @@ class EscapeSequenceParser {
                   break;
                 }
               }
-              if (c < 0) oscHandlerFallback(identifier, content);
+              if (c < 0) {
+                oscHandlerFallback(identifier, content);
+              }
             }
           }
-          if (code == 0x1b) transition |= ParserState.Escape.value;
+          if (code == 0x1b) {
+            transition |= ParserState.Escape.value;
+          }
           osc = '';
           pars.clear();
           pars.add(0);

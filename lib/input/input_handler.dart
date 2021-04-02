@@ -277,6 +277,8 @@ class InputHandler {
   void parse(Uint8List data, [int length = -1]) {
     if (length == -1) {
       length = data.length;
+    } else {
+      data = Uint8List.view(data.buffer, 0, length);
     }
 
     _parser.parse(data);
