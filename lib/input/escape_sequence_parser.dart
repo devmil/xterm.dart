@@ -497,7 +497,7 @@ class EscapeSequenceParser {
       escHandlerFallback = fallback;
 
   void setCsiHandler(String flag, CsiHandler callback) =>
-      csiHandlers[flag.runes.first] = [callback];
+      csiHandlers[flag.codeUnitAt(0)] = [callback];
   void clearCsiHandler(int flag) => csiHandlers.remove(flag);
   void setCsiHandlerFallback(Function(String, List<int>, int) fallback) =>
       csiHandlerFallback = fallback;

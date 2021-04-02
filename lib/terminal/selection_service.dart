@@ -113,7 +113,7 @@ class SelectionService {
       if (cd.isNullChar) {
         return false;
       }
-      return unicode.isLetterNumber(cd.rune.runes.first);
+      return unicode.isLetterNumber(cd.rune.codeUnitAt(0));
     };
 
     final chr = buffer.getChar(col, row);

@@ -56,7 +56,7 @@ extension TerminalBufferManipulationCommandExtensions on Terminal {
         var line = buffer.lines[row + buffer.yBase];
         for (int col = rect.left; col <= rect.right; col++) {
           line![col] = CharData(curAttr,
-              rune: fillChar, width: 1, code: fillChar.runes.first);
+              rune: fillChar, width: 1, code: fillChar.codeUnitAt(0));
         }
       }
     }

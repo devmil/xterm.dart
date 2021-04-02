@@ -327,7 +327,7 @@ class InputHandler {
     if (p.length != 2) _selectDefaultCharset();
     int ch;
 
-    final charset = CharSets.all[p[1].runes.first];
+    final charset = CharSets.all[p[1].codeUnitAt(0)];
 
     switch (p[0]) {
       case '(':
@@ -1158,7 +1158,7 @@ class InputHandler {
       // get charset replacement character
       // charset are only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
-      if (code.runes.first < 127 && charset != null) {
+      if (code.codeUnitAt(0) < 127 && charset != null) {
         // MIGUEL-FIXME - this is broken for dutch charset that returns two letters "ij", need to figure out what to do
         final str = charset[code];
         if (str != null) {
@@ -1166,7 +1166,7 @@ class InputHandler {
           code = ch;
         }
       }
-      if (screenReaderMode) _terminal.emitChar(ch.runes.first);
+      if (screenReaderMode) _terminal.emitChar(ch.codeUnitAt(0));
 
       // insert combining char at last cursor position
       // FIXME: needs handling after cursor jumps
@@ -1185,13 +1185,13 @@ class InputHandler {
             if (buffer.x >= 2) {
               var chMinusTwo = bufferRow[buffer.x - 2];
 
-              chMinusTwo.code += ch.runes.first;
+              chMinusTwo.code += ch.codeUnitAt(0);
               chMinusTwo.rune = code;
               bufferRow[buffer.x - 2] =
                   chMinusTwo; // must be set explicitly now
             }
           } else {
-            chMinusOne.code += ch.runes.first;
+            chMinusOne.code += ch.codeUnitAt(0);
             chMinusOne.rune = code;
             bufferRow[buffer.x - 1] = chMinusOne; // must be set explicitly now
           }
@@ -1248,7 +1248,7 @@ class InputHandler {
 
       // write current char to buffer and advance cursor
       var charData =
-          CharData(curAttr, rune: code, width: chWidth, code: ch.runes.first);
+          CharData(curAttr, rune: code, width: chWidth, code: ch.codeUnitAt(0));
       bufferRow![buffer.x++] = charData;
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
