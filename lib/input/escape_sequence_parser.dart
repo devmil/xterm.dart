@@ -652,7 +652,7 @@ class EscapeSequenceParser {
           collect += String.fromCharCode(code);
           break;
         case ParserAction.EscDispatch:
-          final ehandler = escHandlers[code];
+          final ehandler = escHandlers[collect + String.fromCharCode(code)];
           if (ehandler != null) {
             ehandler(collect, code);
           } else {
