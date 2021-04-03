@@ -168,11 +168,11 @@ class BufferLine {
     }
 
     final sb = StringBuffer();
-    _data.forEach((element) {
-      if (element.code != 0) {
-        sb.write(element.rune);
+    for (var i = startCol; i < endCol; i++) {
+      if (_data[i].hasContent) {
+        sb.write(_data[i].rune);
       }
-    });
+    }
 
     return sb.toString();
   }
