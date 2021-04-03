@@ -109,7 +109,7 @@ class _TerminalViewState extends State<TerminalView> {
 
   void onTerminalChange() {
     final currentScrollExtent =
-        _cellSize.cellHeight * widget.terminal.buffer.yBase;
+        _cellSize.cellHeight * widget.terminal.buffer.yDisp;
 
     widget.scrollController.jumpTo(currentScrollExtent);
 
@@ -284,8 +284,8 @@ class _TerminalViewState extends State<TerminalView> {
     _metaPressed = event.isMetaPressed;
 
     widget.inputBehavior.onKeyStroke(event, widget.terminal);
-    var cursorYPos = widget.terminal.buffer.yBase;
-    var linesToScroll = cursorYPos - widget.terminal.buffer.yDisp;
+    var currentViewPoerY = widget.terminal.buffer.yBase;
+    var linesToScroll = currentViewPoerY - widget.terminal.buffer.yDisp;
     if (linesToScroll != 0) {
       widget.terminal.scrollLines(linesToScroll);
     }
@@ -304,9 +304,9 @@ class _TerminalViewState extends State<TerminalView> {
 
   // synchronize flutter scroll offset to terminal
   void onScroll(double offset) {
-    final desiredCursorYPos = (offset / _cellSize.cellHeight).ceil();
-    var cursorYPos = widget.terminal.buffer.yBase;
-    var linesToScroll = desiredCursorYPos - cursorYPos;
+    final desiredViewPortYPos = (offset / _cellSize.cellHeight).ceil();
+    var viewPortYPos = widget.terminal.buffer.yDisp;
+    var linesToScroll = desiredViewPortYPos - viewPortYPos;
 
     if (linesToScroll != 0) {
       setState(() {
@@ -588,7 +588,7 @@ class TerminalPainter extends CustomPainter {
   }
 
   void _paintCursor(Canvas canvas) {
-    final screenCursorY = terminal.buffer.y + terminal.buffer.yBase;
+    final screenCursorY = terminal.buffer.y;
     if (screenCursorY < 0 || screenCursorY >= terminal.rows) {
       return;
     }
