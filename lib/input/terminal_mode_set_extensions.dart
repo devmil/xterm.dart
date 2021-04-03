@@ -102,9 +102,7 @@ extension TerminalModeSetExtensions on Terminal {
           this.insertMode = true;
           break;
         case 20:
-
-          // Automatic New Line (LNM)
-          // this._t.convertEol = true;
+          this.lineFeedMode = false;
           break;
       }
     } else if (collect == "?") {
@@ -316,7 +314,7 @@ extension TerminalModeSetExtensions on Terminal {
           this.insertMode = false;
           break;
         case 20:
-          // this._t.convertEol = false;
+          this.lineFeedMode = true;
           break;
       }
     } else if (collect == "?") {

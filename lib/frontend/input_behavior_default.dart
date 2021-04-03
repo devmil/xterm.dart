@@ -6,6 +6,7 @@ import 'package:platform_info/platform_info.dart';
 import 'package:xterm/frontend/input_behavior.dart';
 import 'package:xterm/frontend/input_map.dart';
 import 'package:xterm/input/keyboard_translations.dart';
+import 'package:xterm/input/keys.dart';
 import 'package:xterm/xterm.dart';
 
 class InputBehaviorDefault extends InputBehavior {
@@ -26,6 +27,21 @@ class InputBehaviorDefault extends InputBehavior {
     final key = inputMap(event.logicalKey);
 
     if (key != null) {
+      // if the terminal is in line feed mode, send \r before \n
+      if (key == TerminalKey.enter && terminal.lineFeedMode) {
+        final sequence = KeyboardTranslations.getKeySequence(
+            TerminalKey.returnKey,
+            event.isControlPressed,
+            event.isShiftPressed,
+            event.isAltPressed,
+            Platform.I.isMacOS,
+            terminal.buffers.isAlternateBuffer);
+        if (sequence != null) {
+          terminal.delegate.send(sequence);
+          return;
+        }
+      }
+
       final sequence = KeyboardTranslations.getKeySequence(
           key,
           event.isControlPressed,

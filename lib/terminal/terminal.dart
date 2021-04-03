@@ -101,6 +101,8 @@ class Terminal with Observable {
 
   bool insertMode = false;
 
+  bool lineFeedMode = true;
+
   int curAttr = 0;
 
   //Input handler API
@@ -174,10 +176,12 @@ class Terminal with Observable {
 
   void feedData(Uint8List data) {
     _input.parse(data);
+    notifyListeners();
   }
 
   void feedString(String string) {
     _input.parse(_utf8Encoder.convert(string));
+    notifyListeners();
   }
 
   void updateRange(int y) {
@@ -187,11 +191,9 @@ class Terminal with Observable {
 
     if (_refreshStart == null || y < _refreshStart!) {
       _refreshStart = y;
-      notifyListeners();
     }
     if (_refreshEnd == null || y > _refreshEnd!) {
       _refreshEnd = y;
-      notifyListeners();
     }
   }
 
