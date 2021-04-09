@@ -44,14 +44,11 @@ class ReflowStrategyWider extends ReflowStrategy {
             nextLine.cellGetContent(moveCount) == 0) {
           moveCount += 1;
         }
-        line.copyCellsFrom(nextLine, 0, copyDestIndex, moveCount);
+        line.moveCellsFrom(nextLine, 0, copyDestIndex, moveCount);
         if (moveCount >= nextLineLength) {
           // if we unwrapped all cells off the next line, delete it
           buffer.lines.remove(i + offset);
           offset--;
-        } else {
-          // otherwise just remove the characters we moved up a line
-          nextLine.removeN(0, moveCount);
         }
       }
     }

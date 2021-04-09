@@ -39,13 +39,7 @@ class ReflowStrategyNarrower extends ReflowStrategy {
         if (i + 1 < buffer.lines.length) {
           final nextLine = buffer.lines[i + 1];
           if (nextLine.isWrapped) {
-            final nextLineLength = nextLine.getTrimmedLength();
-            nextLine.ensure(nextLineLength + cellsToCopy + (addZero ? 1 : 0));
-            nextLine.insertN(0, cellsToCopy + (addZero ? 1 : 0));
-            nextLine.copyCellsFrom(line, moveIndexStart, 0, cellsToCopy);
-            // clean the cells that we moved
-            line.erase(buffer.terminal.cursor, moveIndexStart,
-                moveIndexStart + cellsToCopy);
+            nextLine.moveCellsFrom(line, moveIndexStart, 0, cellsToCopy);
             //print('M: ${i < 10 ? '0' : ''}$i: ${line.toDebugString(oldCols)}');
             //print(
             //    'N: ${i + 1 < 10 ? '0' : ''}${i + 1}: ${nextLine.toDebugString(oldCols)}');
@@ -54,10 +48,8 @@ class ReflowStrategyNarrower extends ReflowStrategy {
         }
 
         final newLine = BufferLine(isWrapped: true);
-        newLine.ensure(max(newCols, cellsToCopy));
-        newLine.copyCellsFrom(line, moveIndexStart, 0, cellsToCopy);
-        // clean the cells that we moved
-        line.erase(buffer.terminal.cursor, moveIndexStart, lineLength);
+        newLine.ensure(newCols);
+        newLine.moveCellsFrom(line, moveIndexStart, 0, cellsToCopy);
 
         buffer.lines.insert(i + 1, newLine);
 
