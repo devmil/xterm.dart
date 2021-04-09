@@ -372,24 +372,20 @@ class TerminalPainter extends CustomPainter {
       final cellCount = terminal.viewWidth;
 
       for (var col = 0; col < cellCount; col++) {
-        final cellWidth = line.cellGetWidth(col);
+        final cell = line[col];
+        final cellWidth = cell.width;
         if (cellWidth == 0) {
           continue;
         }
 
-        final cellFgColor = line.cellGetFgColor(col);
-        final cellBgColor = line.cellGetBgColor(col);
-        final effectBgColor = line.cellHasFlag(col, CellFlags.inverse)
-            ? cellFgColor
-            : cellBgColor;
+        final cellFgColor = cell.fgColor;
+        final cellBgColor = cell.bgColor;
+        final effectBgColor =
+            cell.hasFlag(CellFlags.inverse) ? cellFgColor : cellBgColor;
 
         if (effectBgColor == 0x00) {
           continue;
         }
-
-        // final cellFlags = line.cellGetFlags(i);
-        // final cell = line.getCell(i);
-        // final attr = cell.attr;
 
         final offsetX = col * charSize.cellWidth;
         final effectWidth = charSize.cellWidth * cellWidth + 1;
@@ -453,14 +449,15 @@ class TerminalPainter extends CustomPainter {
       final cellCount = terminal.viewWidth;
 
       for (var col = 0; col < cellCount; col++) {
-        final width = line.cellGetWidth(col);
+        final cell = line[col];
+        final width = cell.width;
 
         if (width == 0) {
           continue;
         }
 
         final offsetX = col * charSize.cellWidth;
-        _paintCell(canvas, line, col, offsetX, offsetY);
+        _paintCell(canvas, line, cell, offsetX, offsetY);
       }
     }
   }
@@ -468,14 +465,14 @@ class TerminalPainter extends CustomPainter {
   void _paintCell(
     Canvas canvas,
     BufferLine line,
-    int cell,
+    CellData cell,
     double offsetX,
     double offsetY,
   ) {
-    final codePoint = line.cellGetContent(cell);
-    final fgColor = line.cellGetFgColor(cell);
-    final bgColor = line.cellGetBgColor(cell);
-    final flags = line.cellGetFlags(cell);
+    final codePoint = cell.content;
+    final fgColor = cell.fgColor;
+    final bgColor = cell.bgColor;
+    final flags = cell.flags;
 
     if (codePoint == 0 || flags.hasFlag(CellFlags.invisible)) {
       return;
@@ -547,7 +544,7 @@ class TerminalPainter extends CustomPainter {
     }
 
     final width = charSize.cellWidth *
-        terminal.buffer.currentLine.cellGetWidth(terminal.cursorX).clamp(1, 2);
+        terminal.buffer.currentLine[terminal.cursorX].width.clamp(1, 2);
 
     final offsetX = charSize.cellWidth * terminal.cursorX;
     final offsetY = charSize.cellHeight * screenCursorY;

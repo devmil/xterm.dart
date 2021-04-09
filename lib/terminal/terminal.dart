@@ -476,11 +476,11 @@ class Terminal with Observable {
         //   break;
         // }
 
-        if (line.cellGetWidth(col) == 0) {
+        if (line[col].width == 0) {
           continue;
         }
 
-        var char = line.cellGetContent(col);
+        var char = line[col].content;
 
         if (char == 0x00) {
           const blank = 32;

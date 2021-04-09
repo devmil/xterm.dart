@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:xterm/buffer/buffer.dart';
 import 'package:xterm/buffer/buffer_line.dart';
 import 'package:xterm/buffer/reflow_strategy.dart';
-import 'package:xterm/utli/circular_list.dart';
 
 class ReflowStrategyWider extends ReflowStrategy {
   ReflowStrategyWider(Buffer buffer) : super(buffer);
@@ -20,8 +19,8 @@ class ReflowStrategyWider extends ReflowStrategy {
         final lineLength = line.getTrimmedLength();
 
         var copyDestIndex = lineLength;
-        if (line.cellGetWidth(copyDestIndex - 1) == 2 &&
-            line.cellGetContent(copyDestIndex) == 0) {
+        if (line[copyDestIndex - 1].width == 2 &&
+            line[copyDestIndex].content == 0) {
           //we would override a wide char placeholder => move index one to the right
           copyDestIndex += 1;
         }
@@ -40,8 +39,8 @@ class ReflowStrategyWider extends ReflowStrategy {
         // when we are about to copy a double width character
         // to the end of the line then we can include the 0 width placeholder
         // after it
-        if (nextLine.cellGetWidth(moveCount - 1) == 2 &&
-            nextLine.cellGetContent(moveCount) == 0) {
+        if (nextLine[moveCount - 1].width == 2 &&
+            nextLine[moveCount].content == 0) {
           moveCount += 1;
         }
         line.moveCellsFrom(nextLine, 0, copyDestIndex, moveCount);

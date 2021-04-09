@@ -21,51 +21,45 @@ const _cellBgColor = 8;
 const _cellWidth = 12;
 const _cellFlags = 13;
 
-class _CellData {
+class CellData {
   late ByteData _cellData;
 
-  _CellData() {
+  CellData() {
     _cellData = ByteData(_cellSize);
   }
 
-  set content(int value) {
-    _cellData.setInt32(_cellContent, value);
+  set content(int value) => _cellData.setInt32(_cellContent, value);
+
+  int get content => _cellData.getInt32(_cellContent);
+
+  set fgColor(int value) => _cellData.setInt32(_cellFgColor, value);
+
+  int get fgColor => _cellData.getInt32(_cellFgColor);
+
+  set bgColor(int value) => _cellData.setInt32(_cellBgColor, value);
+
+  int get bgColor => _cellData.getInt32(_cellBgColor);
+
+  set width(int value) => _cellData.setInt8(_cellWidth, value);
+
+  int get width => _cellData.getInt8(_cellWidth);
+
+  set flags(int value) => _cellData.setInt8(_cellFlags, value);
+
+  int get flags => _cellData.getInt8(_cellFlags);
+
+  bool get hasContent => content != 0;
+
+  void clearFlags() {
+    flags = 0;
   }
 
-  int get content {
-    return _cellData.getInt32(_cellContent);
+  bool hasFlag(int flag) {
+    return flags & flag != 0;
   }
 
-  set fgColor(int value) {
-    _cellData.setInt32(_cellFgColor, value);
-  }
-
-  int get fgColor {
-    return _cellData.getInt32(_cellFgColor);
-  }
-
-  set bgColor(int value) {
-    _cellData.setInt32(_cellBgColor, value);
-  }
-
-  int get bgColor {
-    return _cellData.getInt32(_cellBgColor);
-  }
-
-  set width(int value) {
-    _cellData.setInt8(_cellWidth, value);
-  }
-
-  int get width {
-    return _cellData.getInt8(_cellWidth);
-  }
-
-  set flags(int value) {
-    _cellData.setInt8(_cellFlags, value);
-  }
-
-  int get flags {
-    return _cellData.getInt8(_cellFlags);
+  void cellSetFlag(int flag) {
+    flags = flags | flag;
   }
 
   void clear() {
@@ -75,15 +69,34 @@ class _CellData {
     width = 0;
     flags = 0;
   }
+
+  void erase(Cursor cursor) {
+    content = 0;
+    fgColor = cursor.fg;
+    bgColor = cursor.bg;
+    flags = cursor.flags;
+    width = 0;
+  }
+
+  void initialize({
+    required int content,
+    required int width,
+    required Cursor cursor,
+  }) {
+    this.content = content;
+    this.fgColor = cursor.fg;
+    this.bgColor = cursor.bg;
+    this.width = width;
+    this.flags = cursor.flags;
+  }
 }
 
 class BufferLine {
   BufferLine({this.isWrapped = false}) {
-    _cells =
-        List<_CellData>.generate(64, (index) => _CellData(), growable: true);
+    _cells = List<CellData>.generate(64, (index) => CellData(), growable: true);
   }
 
-  late List<_CellData> _cells;
+  late List<CellData> _cells;
 
   bool isWrapped;
 
@@ -94,7 +107,7 @@ class BufferLine {
 
     final diff = length - _cells.length;
 
-    _cells.addAll(List<_CellData>.generate(diff, (index) => _CellData()));
+    _cells.addAll(List<CellData>.generate(diff, (index) => CellData()));
   }
 
   void insert(int index) {
@@ -107,7 +120,7 @@ class BufferLine {
 
   void insertN(int index, int count) {
     _cells.insertAll(
-        index, List<_CellData>.generate(count, (index) => _CellData()));
+        index, List<CellData>.generate(count, (index) => CellData()));
   }
 
   void clear() {
@@ -117,117 +130,25 @@ class BufferLine {
   void erase(Cursor cursor, int start, int end, [bool resetIsWrapped = false]) {
     ensure(end);
     for (var i = start; i < end; i++) {
-      cellErase(i, cursor);
+      _cells[i].erase(cursor);
     }
     if (resetIsWrapped) {
       isWrapped = false;
     }
   }
 
-  void cellInitialize(
-    int index, {
-    required int content,
-    required int width,
-    required Cursor cursor,
-  }) {
-    final cell = _cells[index];
-    cell.content = content;
-    cell.fgColor = cursor.fg;
-    cell.bgColor = cursor.bg;
-    cell.width = width;
-    cell.flags = cursor.flags;
-  }
-
-  bool cellHasContent(int index) {
-    return cellGetContent(index) != 0;
-  }
-
-  int cellGetContent(int index) {
-    if (index >= _cells.length) {
-      return 0;
-    }
-    return _cells[index].content;
-  }
-
-  void cellSetContent(int index, int content) {
-    _cells[index].content = content;
-  }
-
-  int cellGetFgColor(int index) {
-    if (index >= _cells.length) {
-      return 0;
-    }
-    return _cells[index].fgColor;
-  }
-
-  void cellSetFgColor(int index, int color) {
-    _cells[index].fgColor = color;
-  }
-
-  int cellGetBgColor(int index) {
-    if (index >= _cells.length) {
-      return 0;
-    }
-    return _cells[index].bgColor;
-  }
-
-  void cellSetBgColor(int index, int color) {
-    _cells[index].bgColor = color;
-  }
-
-  int cellGetFlags(int index) {
-    if (index >= _cells.length) {
-      return 0;
-    }
-    return _cells[index].flags;
-  }
-
-  void cellSetFlags(int index, int flags) {
-    _cells[index].flags = flags;
-  }
-
-  int cellGetWidth(int index) {
-    if (index >= _cells.length) {
-      return 0;
-    }
-    return _cells[index].width;
-  }
-
-  void cellSetWidth(int index, int width) {
-    _cells[index].width = width;
-  }
-
-  void cellClearFlags(int index) {
-    cellSetFlags(index, 0);
-  }
-
-  bool cellHasFlag(int index, int flag) {
-    return cellGetFlags(index) & flag != 0;
-  }
-
-  void cellSetFlag(int index, int flag) {
-    cellSetFlags(index, cellGetFlags(index) | flag);
-  }
-
-  void cellErase(int index, Cursor cursor) {
-    cellSetContent(index, 0x00);
-    cellSetFgColor(index, cursor.fg);
-    cellSetBgColor(index, cursor.bg);
-    cellSetFlags(index, cursor.flags);
-    cellSetWidth(index, 0);
+  CellData operator [](int index) {
+    ensure(index + 1);
+    return _cells[index];
   }
 
   int getTrimmedLength([int? cols]) {
     if (cols == null) {
       cols = _cells.length;
     }
-    for (int i = cols; i >= 0; i--) {
-      if (cellGetContent(i) != 0) {
-        int length = 0;
-        for (int j = 0; j <= i; j++) {
-          length += cellGetWidth(j);
-        }
-        return length;
+    for (int i = cols - 1; i >= 0; i--) {
+      if (_cells[i].content != 0) {
+        return _cells.fold(0, (curLen, cell) => curLen + cell.width);
       }
     }
     return 0;
@@ -249,7 +170,7 @@ class BufferLine {
   void clearRange(int start, int end) {
     end = min(end, _cells.length);
     for (var index = start; index < end; index++) {
-      cellSetContent(index, 0x00);
+      _cells[index].content = 0;
     }
   }
 
@@ -257,7 +178,7 @@ class BufferLine {
   String toString() {
     final result = StringBuffer();
     for (int i = 0; i < _cells.length; i++) {
-      final code = cellGetContent(i);
+      final code = _cells[i].content;
       if (code == 0) {
         continue;
       }
@@ -270,12 +191,12 @@ class BufferLine {
     final result = StringBuffer();
     final length = getTrimmedLength();
     for (int i = 0; i < max(cols, length); i++) {
-      var code = cellGetContent(i);
+      var code = _cells[i].content;
       if (code == 0) {
-        if (cellGetWidth(i) == 0) {
+        if (_cells[i].width == 0) {
           code = '_'.runes.first;
         } else {
-          code = cellGetWidth(i).toString().runes.first;
+          code = _cells[i].width.toString().runes.first;
         }
       }
       result.writeCharCode(code);

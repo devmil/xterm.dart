@@ -1,10 +1,6 @@
-import 'dart:math';
-
-import 'package:flutter/material.dart';
 import 'package:xterm/buffer/buffer.dart';
 import 'package:xterm/buffer/buffer_line.dart';
 import 'package:xterm/buffer/reflow_strategy.dart';
-import 'package:xterm/utli/circular_list.dart';
 
 class ReflowStrategyNarrower extends ReflowStrategy {
   ReflowStrategyNarrower(Buffer buffer) : super(buffer);
@@ -21,15 +17,15 @@ class ReflowStrategyNarrower extends ReflowStrategy {
 
         // when we have a double width character and are about to move the "0" placeholder,
         // then we have to move the double width character as well
-        if (line.cellGetContent(moveIndexStart) == 0 &&
-            line.cellGetWidth(moveIndexStart - 1) == 2) {
+        if (line[moveIndexStart].content == 0 &&
+            line[moveIndexStart - 1].width == 2) {
           moveIndexStart -= 1;
           cellsToCopy += 1;
         }
 
         var addZero = false;
         //when the last cell to copy is a double width cell, then add a "0"
-        if (line.cellGetWidth(moveIndexStart + cellsToCopy - 1) == 2) {
+        if (line[moveIndexStart + cellsToCopy - 1].width == 2) {
           addZero = true;
         }
 

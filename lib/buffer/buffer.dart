@@ -97,8 +97,7 @@ class Buffer {
     final line = currentLine;
     line.ensure(_cursorX + 1);
 
-    line.cellInitialize(
-      _cursorX,
+    line[_cursorX].initialize(
       content: codePoint,
       width: cellWidth,
       cursor: terminal.cursor,
@@ -443,7 +442,7 @@ class Buffer {
   void insertBlankCharacters(int count) {
     for (var i = 0; i < count; i++) {
       currentLine.insert(_cursorX + i);
-      currentLine.cellSetFlags(_cursorX + i, terminal.cursor.flags);
+      currentLine[_cursorX + i].flags = terminal.cursor.flags;
     }
   }
 
