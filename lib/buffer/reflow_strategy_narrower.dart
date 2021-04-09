@@ -33,13 +33,30 @@ class ReflowStrategyNarrower extends ReflowStrategy {
           addZero = true;
         }
 
+        int alreadyInserted = 0;
+
+        //when we have aggregated a whole new line then insert it now
+        while (cellsToCopy > newCols) {
+          final newLine = BufferLine(isWrapped: true);
+          newLine.ensure(newCols);
+          newLine.moveCellsFrom(line, moveIndexStart, 0, newCols);
+
+          buffer.lines.insert(i + 1, newLine);
+
+          cellsToCopy -= newCols;
+          alreadyInserted++;
+        }
+
         // we need to move cut cells to the next line
         // if the next line is wrapped anyway, we can push them onto the beginning of that line
         // otherwise, we need add a new wrapped line
-        if (i + 1 < buffer.lines.length) {
-          final nextLine = buffer.lines[i + 1];
+        if (i + alreadyInserted + 1 < buffer.lines.length) {
+          final nextLine = buffer.lines[i + alreadyInserted + 1];
           if (nextLine.isWrapped) {
             nextLine.moveCellsFrom(line, moveIndexStart, 0, cellsToCopy);
+            if (addZero) {
+              nextLine.insert(moveIndexStart + cellsToCopy);
+            }
             //print('M: ${i < 10 ? '0' : ''}$i: ${line.toDebugString(oldCols)}');
             //print(
             //    'N: ${i + 1 < 10 ? '0' : ''}${i + 1}: ${nextLine.toDebugString(oldCols)}');
@@ -50,8 +67,11 @@ class ReflowStrategyNarrower extends ReflowStrategy {
         final newLine = BufferLine(isWrapped: true);
         newLine.ensure(newCols);
         newLine.moveCellsFrom(line, moveIndexStart, 0, cellsToCopy);
+        if (addZero) {
+          newLine.insert(moveIndexStart + cellsToCopy);
+        }
 
-        buffer.lines.insert(i + 1, newLine);
+        buffer.lines.insert(i + alreadyInserted + 1, newLine);
 
         //TODO: scrolling is a bit weird afterwards
 
