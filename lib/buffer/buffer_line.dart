@@ -75,10 +75,6 @@ class _CellData {
     width = 0;
     flags = 0;
   }
-
-  void copyFrom(_CellData cell) {
-    _cellData.buffer.asInt8List().setAll(0, cell._cellData.buffer.asInt8List());
-  }
 }
 
 class BufferLine {
