@@ -29,11 +29,11 @@ class _CellData {
   }
 
   set content(int value) {
-    _cellData.setInt32(0, value);
+    _cellData.setInt32(_cellContent, value);
   }
 
   int get content {
-    return _cellData.getInt32(0);
+    return _cellData.getInt32(_cellContent);
   }
 
   set fgColor(int value) {
@@ -252,10 +252,6 @@ class BufferLine {
 
   void clearRange(int start, int end) {
     end = min(end, _cells.length);
-    // start = start.clamp(0, _cells.length);
-    // end ??= _cells.length;
-    // end = end.clamp(start, _cells.length);
-    // _cells.removeRange(start, end);
     for (var index = start; index < end; index++) {
       cellSetContent(index, 0x00);
     }
