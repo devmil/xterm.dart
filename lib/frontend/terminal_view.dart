@@ -165,7 +165,9 @@ class _TerminalViewState extends State<TerminalView> {
           // with widgets such as Scrollbar.
           return NotificationListener<ScrollNotification>(
             onNotification: (notification) {
-              onScroll(notification.metrics.pixels);
+              SchedulerBinding.instance!.addPostFrameCallback((_) {
+                onScroll(notification.metrics.pixels);
+              });
               return false;
             },
             child: Scrollable(
