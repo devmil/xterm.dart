@@ -15,17 +15,6 @@ import 'package:xterm/terminal/cursor.dart';
 ///   |  width  |  flags  | reserved | reserved |
 ///      1byte     1byte     1byte      1byte
 
-const _cellSize = 16;
-const _cellSize64Bit = _cellSize >> 3;
-
-const _cellContent = 0;
-const _cellFgColor = 4;
-const _cellBgColor = 8;
-
-// const _cellAttributes = 12;
-const _cellWidth = 12;
-const _cellFlags = 13;
-
 int _nextLength(int lengthRequirement) {
   var nextLength = 2;
   while (nextLength < lengthRequirement) {
@@ -34,14 +23,43 @@ int _nextLength(int lengthRequirement) {
   return nextLength;
 }
 
-class BufferLine {
+abstract class ReadOnlyBufferLine {
+  static const cellSize = 16;
+  static const cellSize64Bit = cellSize >> 3;
+
+  static const cellContent = 0;
+  static const cellFgColor = 4;
+  static const cellBgColor = 8;
+
+// const _cellAttributes = 12;
+  static const cellWidth = 12;
+  static const cellFlags = 13;
+
+  bool get isWrapped;
+
+  bool cellHasContent(int index);
+  int cellGetContent(int index);
+  int cellGetFgColor(int index);
+  int cellGetBgColor(int index);
+  int cellGetFlags(int index);
+  int cellGetWidth(int index);
+  bool cellHasFlag(int index, int flag);
+  int getTrimmedLength([int? cols]);
+}
+
+class BufferLine implements ReadOnlyBufferLine {
   BufferLine({int length = 64, this.isWrapped = false}) {
     _maxCols = _nextLength(length);
-    _cells = ByteData(_maxCols * _cellSize);
+    _cells = ByteData(_maxCols * ReadOnlyBufferLine.cellSize);
   }
 
   late ByteData _cells;
 
+  ByteData getCells() {
+    return _cells;
+  }
+
+  @override
   bool isWrapped;
 
   int _maxCols = 64;
@@ -52,7 +70,7 @@ class BufferLine {
     }
 
     final nextLength = _nextLength(length);
-    final newCells = ByteData(nextLength * _cellSize);
+    final newCells = ByteData(nextLength * ReadOnlyBufferLine.cellSize);
     newCells.buffer.asInt64List().setAll(0, _cells.buffer.asInt64List());
     _cells = newCells;
     _maxCols = nextLength;
@@ -63,10 +81,10 @@ class BufferLine {
   }
 
   void removeN(int index, int count) {
-    final moveStart = index * _cellSize64Bit;
-    final moveOffset = count * _cellSize64Bit;
-    final moveEnd = (_maxCols - count) * _cellSize64Bit;
-    final bufferEnd = _maxCols * _cellSize64Bit;
+    final moveStart = index * ReadOnlyBufferLine.cellSize64Bit;
+    final moveOffset = count * ReadOnlyBufferLine.cellSize64Bit;
+    final moveEnd = (_maxCols - count) * ReadOnlyBufferLine.cellSize64Bit;
+    final bufferEnd = _maxCols * ReadOnlyBufferLine.cellSize64Bit;
 
     // move data backward
     final cells = _cells.buffer.asInt64List();
@@ -93,9 +111,9 @@ class BufferLine {
     // +--------------------------|--|--------------------------------+ end
     //                       start   start+offset
 
-    final moveStart = index * _cellSize64Bit;
-    final moveOffset = count * _cellSize64Bit;
-    final bufferEnd = _maxCols * _cellSize64Bit;
+    final moveStart = index * ReadOnlyBufferLine.cellSize64Bit;
+    final moveOffset = count * ReadOnlyBufferLine.cellSize64Bit;
+    final bufferEnd = _maxCols * ReadOnlyBufferLine.cellSize64Bit;
 
     // move data forward
     final cells = _cells.buffer.asInt64List();
@@ -110,7 +128,7 @@ class BufferLine {
   }
 
   void clear() {
-    clearRange(0, _cells.lengthInBytes ~/ _cellSize);
+    clearRange(0, _cells.lengthInBytes ~/ ReadOnlyBufferLine.cellSize);
   }
 
   void erase(Cursor cursor, int start, int end, [bool resetIsWrapped = false]) {
@@ -124,8 +142,8 @@ class BufferLine {
   }
 
   void cellClear(int index) {
-    _cells.setInt64(index * _cellSize, 0x00);
-    _cells.setInt64(index * _cellSize + 8, 0x00);
+    _cells.setInt64(index * ReadOnlyBufferLine.cellSize, 0x00);
+    _cells.setInt64(index * ReadOnlyBufferLine.cellSize + 8, 0x00);
   }
 
   void cellInitialize(
@@ -134,74 +152,96 @@ class BufferLine {
     required int width,
     required Cursor cursor,
   }) {
-    final cell = index * _cellSize;
-    _cells.setInt32(cell + _cellContent, content);
-    _cells.setInt32(cell + _cellFgColor, cursor.fg);
-    _cells.setInt32(cell + _cellBgColor, cursor.bg);
-    _cells.setInt8(cell + _cellWidth, width);
-    _cells.setInt8(cell + _cellFlags, cursor.flags);
+    final cell = index * ReadOnlyBufferLine.cellSize;
+    _cells.setInt32(cell + ReadOnlyBufferLine.cellContent, content);
+    _cells.setInt32(cell + ReadOnlyBufferLine.cellFgColor, cursor.fg);
+    _cells.setInt32(cell + ReadOnlyBufferLine.cellBgColor, cursor.bg);
+    _cells.setInt8(cell + ReadOnlyBufferLine.cellWidth, width);
+    _cells.setInt8(cell + ReadOnlyBufferLine.cellFlags, cursor.flags);
   }
 
+  @override
   bool cellHasContent(int index) {
     return cellGetContent(index) != 0;
   }
 
+  @override
   int cellGetContent(int index) {
-    return _cells.getUint32(index * _cellSize + _cellContent);
+    return _cells.getUint32(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellContent);
   }
 
   void cellSetContent(int index, int content) {
-    _cells.setInt32(index * _cellSize + _cellContent, content);
+    _cells.setInt32(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellContent,
+        content);
   }
 
+  @override
   int cellGetFgColor(int index) {
     if (index >= _maxCols) {
       return 0;
     }
-    return _cells.getInt32(index * _cellSize + _cellFgColor);
+    return _cells.getInt32(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellFgColor);
   }
 
   void cellSetFgColor(int index, int color) {
-    _cells.setInt32(index * _cellSize + _cellFgColor, color);
+    _cells.setInt32(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellFgColor,
+        color);
   }
 
+  @override
   int cellGetBgColor(int index) {
     if (index >= _maxCols) {
       return 0;
     }
-    return _cells.getInt32(index * _cellSize + _cellBgColor);
+    return _cells.getInt32(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellBgColor);
   }
 
   void cellSetBgColor(int index, int color) {
-    _cells.setInt32(index * _cellSize + _cellBgColor, color);
+    _cells.setInt32(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellBgColor,
+        color);
   }
 
+  @override
   int cellGetFlags(int index) {
     if (index >= _maxCols) {
       return 0;
     }
-    return _cells.getInt8(index * _cellSize + _cellFlags);
+    return _cells.getInt8(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellFlags);
   }
 
   void cellSetFlags(int index, int flags) {
-    _cells.setInt8(index * _cellSize + _cellFlags, flags);
+    _cells.setInt8(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellFlags,
+        flags);
   }
 
+  @override
   int cellGetWidth(int index) {
     if (index >= _maxCols) {
       return 1;
     }
-    return _cells.getInt8(index * _cellSize + _cellWidth);
+    return _cells.getInt8(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellWidth);
   }
 
   void cellSetWidth(int index, int width) {
-    _cells.setInt8(index * _cellSize + _cellWidth, width);
+    _cells.setInt8(
+        index * ReadOnlyBufferLine.cellSize + ReadOnlyBufferLine.cellWidth,
+        width);
   }
 
   void cellClearFlags(int index) {
     cellSetFlags(index, 0);
   }
 
+  @override
   bool cellHasFlag(int index, int flag) {
     if (index >= _maxCols) {
       return false;
@@ -221,6 +261,7 @@ class BufferLine {
     cellSetWidth(index, 0);
   }
 
+  @override
   int getTrimmedLength([int? cols]) {
     if (cols == null) {
       cols = _maxCols;
@@ -241,9 +282,9 @@ class BufferLine {
   void copyCellsFrom(BufferLine src, int srcCol, int dstCol, int len) {
     ensure(dstCol + len);
 
-    final intsToCopy = len * _cellSize64Bit;
-    final srcStart = srcCol * _cellSize64Bit;
-    final dstStart = dstCol * _cellSize64Bit;
+    final intsToCopy = len * ReadOnlyBufferLine.cellSize64Bit;
+    final srcStart = srcCol * ReadOnlyBufferLine.cellSize64Bit;
+    final dstStart = dstCol * ReadOnlyBufferLine.cellSize64Bit;
 
     final cells = _cells.buffer.asInt64List();
     final srcCells = src._cells.buffer.asInt64List();

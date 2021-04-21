@@ -15,10 +15,10 @@ abstract class TerminalUiInteraction with Observable {
   int get invisibleHeight;
   Selection? get selection;
   bool get showCursor;
-  List<BufferLine> getVisibleLines();
+  List<ReadOnlyBufferLine> getVisibleLines();
   int get cursorY;
   int get cursorX;
-  BufferLine? get currentLine;
+  ReadOnlyBufferLine? get currentLine;
   int get cursorColor;
   int get backgroundColor;
   bool get dirty;

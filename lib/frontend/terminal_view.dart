@@ -457,7 +457,7 @@ class TerminalPainter extends CustomPainter {
 
   void _paintCell(
     Canvas canvas,
-    BufferLine line,
+    ReadOnlyBufferLine line,
     int cell,
     double offsetX,
     double offsetY,

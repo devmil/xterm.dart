@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:isolate';
+import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
 import 'package:xterm/buffer/buffer_line.dart';
 import 'package:xterm/input/keys.dart';
 import 'package:xterm/mouse/position.dart';
@@ -26,7 +29,7 @@ void terminalMain(SendPort port) async {
         port = msg[1];
         break;
       case 'init':
-        final TerminalInitData initData = msg[1];
+        final _TerminalInitData initData = msg[1];
         _terminal = Terminal(
             backend: initData.backend,
             onTitleChange: (String title) {
@@ -100,7 +103,12 @@ void terminalMain(SendPort port) async {
               _terminal.cursorY,
               _terminal.showCursor,
               _terminal.theme.cursor,
-              _terminal.getVisibleLines(),
+              _terminal
+                  .getVisibleLines()
+                  .map((bufferLine) =>
+                      _RawPointerReadOnlyBufferLine.fromBufferLine(
+                          bufferLine, _terminal!.viewWidth))
+                  .toList(growable: false),
               _terminal.scrollOffset);
           port.send(['newState', newState]);
         }
@@ -115,12 +123,127 @@ void terminalMain(SendPort port) async {
   }
 }
 
-class TerminalInitData {
+class _RawPointerReadOnlyBufferLine implements ReadOnlyBufferLine {
+  int _trimmedLength;
+  int _rawPointerAddress;
+  bool _isWrapped;
+  int _useCount = 1;
+  bool _freed = false;
+
+  _RawPointerReadOnlyBufferLine._(
+      this._rawPointerAddress, this._trimmedLength, this._isWrapped);
+
+  static _RawPointerReadOnlyBufferLine fromBufferLine(
+      BufferLine bufferLine, int maxCols) {
+    //copy cell data to new Heap memory
+    final cellData = bufferLine.getCells();
+    final trimmedLength = bufferLine.getTrimmedLength(maxCols);
+    final dataPtr =
+        malloc.allocate<Int8>(trimmedLength * ReadOnlyBufferLine.cellSize);
+    //copy data
+    dataPtr.asTypedList(trimmedLength * ReadOnlyBufferLine.cellSize).setAll(
+        0,
+        cellData.buffer
+            .asInt8List(0, trimmedLength * ReadOnlyBufferLine.cellSize));
+    return _RawPointerReadOnlyBufferLine._(
+        dataPtr.address, trimmedLength, bufferLine.isWrapped);
+  }
+
+  void _ensureNotFreed() {
+    if (_freed) {
+      throw Exception('Invalid use of a already freed BufferLine!');
+    }
+  }
+
+  Pointer<Int8> _getDataPtr() {
+    _ensureNotFreed();
+    return Pointer<Int8>.fromAddress(_rawPointerAddress);
+  }
+
+  ByteData? _lineByteDataCache;
+
+  ByteData get _lineByteData {
+    if (_lineByteDataCache == null) {
+      final data = _getDataPtr()
+          .asTypedList(ReadOnlyBufferLine.cellSize * _trimmedLength);
+      _lineByteDataCache =
+          ByteData.view(data.buffer, data.offsetInBytes, data.length);
+    }
+    return _lineByteDataCache!;
+  }
+
+  void registerUsage() {
+    _useCount++;
+  }
+
+  void unregisterUsage() {
+    if (_useCount <= 0) {
+      return;
+    }
+    _useCount--;
+    if (_useCount == 0) {
+      malloc.free(_getDataPtr());
+      _freed = true;
+    }
+  }
+
+  int _get32BitValue(int cellIndex, int offset, [defaultValue = 0]) {
+    if (cellIndex >= _trimmedLength) {
+      return defaultValue;
+    }
+    return _lineByteData
+        .getInt32(cellIndex * ReadOnlyBufferLine.cellSize + offset);
+  }
+
+  int _get8BitValue(int cellIndex, int offset, [defaultValue = 0]) {
+    if (cellIndex >= _trimmedLength) {
+      return defaultValue;
+    }
+    return _lineByteData
+        .getInt8(cellIndex * ReadOnlyBufferLine.cellSize + offset);
+  }
+
+  @override
+  int cellGetBgColor(int index) =>
+      _get32BitValue(index, ReadOnlyBufferLine.cellBgColor, 0);
+
+  @override
+  int cellGetContent(int index) =>
+      _get32BitValue(index, ReadOnlyBufferLine.cellContent, 0);
+
+  @override
+  int cellGetFgColor(int index) =>
+      _get32BitValue(index, ReadOnlyBufferLine.cellFgColor, 0);
+
+  @override
+  int cellGetFlags(int index) =>
+      _get8BitValue(index, ReadOnlyBufferLine.cellFlags, 0);
+
+  @override
+  int cellGetWidth(int index) =>
+      _get8BitValue(index, ReadOnlyBufferLine.cellWidth, 0);
+
+  @override
+  bool cellHasContent(int index) => cellGetContent(index) != 0;
+
+  @override
+  bool cellHasFlag(int index, int flag) {
+    return cellGetFlags(index) & flag != 0;
+  }
+
+  @override
+  int getTrimmedLength([int? cols]) => _trimmedLength;
+
+  @override
+  bool get isWrapped => _isWrapped;
+}
+
+class _TerminalInitData {
   PlatformBehavior platform;
   TerminalTheme theme;
   int maxLines;
   TerminalBackend? backend;
-  TerminalInitData(this.backend, this.platform, this.theme, this.maxLines);
+  _TerminalInitData(this.backend, this.platform, this.theme, this.maxLines);
 }
 
 class TerminalState {
@@ -143,7 +266,7 @@ class TerminalState {
   bool showCursor;
   int cursorColor;
 
-  List<BufferLine> visibleLines;
+  List<ReadOnlyBufferLine> visibleLines;
 
   int scrollOffset;
 
@@ -231,7 +354,7 @@ class TerminalIsolate with Observable implements TerminalUiInteraction {
   bool get showCursor => _lastState?.showCursor ?? true;
 
   @override
-  List<BufferLine> getVisibleLines() {
+  List<ReadOnlyBufferLine> getVisibleLines() {
     if (_lastState == null) {
       return List<BufferLine>.empty();
     }
@@ -245,7 +368,7 @@ class TerminalIsolate with Observable implements TerminalUiInteraction {
   int get cursorX => _lastState?.cursorX ?? 0;
 
   @override
-  BufferLine? get currentLine {
+  ReadOnlyBufferLine? get currentLine {
     if (_lastState == null) {
       return null;
     }
@@ -304,6 +427,13 @@ class TerminalIsolate with Observable implements TerminalUiInteraction {
           poll();
           break;
         case 'newState':
+          if (_lastState != null) {
+            _lastState!.visibleLines
+                .cast<_RawPointerReadOnlyBufferLine>()
+                .forEach((bl) {
+              bl.unregisterUsage();
+            });
+          }
           _lastState = message[1];
           if (!initialRefreshCompleted.isCompleted) {
             initialRefreshCompleted.complete(true);
@@ -317,7 +447,7 @@ class TerminalIsolate with Observable implements TerminalUiInteraction {
     });
     _sendPort!.send([
       'init',
-      TerminalInitData(this.backend, this.platform, this.theme, this.maxLines)
+      _TerminalInitData(this.backend, this.platform, this.theme, this.maxLines)
     ]);
     await initialRefreshCompleted.future;
   }
