@@ -56,7 +56,7 @@ void terminalMain(SendPort port) async {
         port = msg[1];
         break;
       case _IsolateCommand.Init:
-        final TerminalInitData initData = msg[1];
+        final _TerminalInitData initData = msg[1];
         _terminal = Terminal(
             backend: initData.backend,
             onTitleChange: (String title) {
@@ -482,7 +482,7 @@ class TerminalIsolate with Observable implements TerminalUiInteraction {
     });
     _sendPort!.send([
       _IsolateCommand.Init,
-      TerminalInitData(this.backend, this.platform, this.theme, this.maxLines)
+      _TerminalInitData(this.backend, this.platform, this.theme, this.maxLines)
     ]);
     await initialRefreshCompleted.future;
   }
