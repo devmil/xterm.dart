@@ -211,6 +211,10 @@ class TerminalTextInputClient extends TextInputClient {
   void updateEditingValue(TextEditingValue value) {
     // print('updateEditingValue $value');
 
+    if(_savedValue == value) {
+      return;
+    }
+
     onInput(value);
 
     // if (_savedValue == null || _savedValue.text == '') {
