@@ -31,6 +31,7 @@ class TerminalView extends StatefulWidget {
     this.autofocus = false,
     ScrollController? scrollController,
     InputBehavior? inputBehavior,
+    this.padding = 0.0,
   })  : focusNode = focusNode ?? FocusNode(),
         scrollController = scrollController ?? ScrollController(),
         inputBehavior = inputBehavior ?? InputBehaviors.platform,
@@ -43,6 +44,8 @@ class TerminalView extends StatefulWidget {
 
   final TerminalStyle style;
   final double opacity;
+
+  final double padding;
 
   final InputBehavior inputBehavior;
 
@@ -262,14 +265,17 @@ class _TerminalViewState extends State<TerminalView> {
       },
       child: Container(
         constraints: BoxConstraints.expand(),
-        child: CustomPaint(
-          painter: TerminalPainter(
-            terminal: widget.terminal,
-            view: widget,
-            oscillator: oscillator,
-            focused: focused,
-            charSize: _cellSize,
-            textLayoutCache: textLayoutCache,
+        child: Padding(
+          padding: EdgeInsets.all(widget.padding),
+          child: CustomPaint(
+            painter: TerminalPainter(
+              terminal: widget.terminal,
+              view: widget,
+              oscillator: oscillator,
+              focused: focused,
+              charSize: _cellSize,
+              textLayoutCache: textLayoutCache,
+            ),
           ),
         ),
         color: Color(widget.terminal.backgroundColor).withOpacity(
