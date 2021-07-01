@@ -170,7 +170,8 @@ class _TerminalViewState extends State<TerminalView> {
       child: MouseRegion(
         cursor: SystemMouseCursors.text,
         child: LayoutBuilder(builder: (context, constraints) {
-          onWidgetSize(constraints.maxWidth, constraints.maxHeight);
+          onWidgetSize(constraints.maxWidth - widget.padding * 2,
+              constraints.maxHeight - widget.padding * 2);
           // use flutter's Scrollable to manage scrolling to better integrate
           // with widgets such as Scrollbar.
           return NotificationListener<ScrollNotification>(
@@ -192,7 +193,8 @@ class _TerminalViewState extends State<TerminalView> {
                 }
 
                 // set viewport height.
-                offset.applyViewportDimension(constraints.maxHeight);
+                offset.applyViewportDimension(
+                    constraints.maxHeight - widget.padding * 2);
 
                 if (widget.terminal.isReady) {
                   final minScrollExtent = 0.0;
@@ -200,7 +202,8 @@ class _TerminalViewState extends State<TerminalView> {
                   final maxScrollExtent = math.max(
                       0.0,
                       _cellSize.cellHeight * widget.terminal.bufferHeight -
-                          constraints.maxHeight);
+                          constraints.maxHeight -
+                          widget.padding * 2);
 
                   // set how much the terminal can scroll
                   offset.applyContentDimensions(
