@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -210,6 +212,16 @@ class TerminalTextInputClient extends TextInputClient {
 
   void updateEditingValue(TextEditingValue value) {
     // print('updateEditingValue $value');
+
+    //TODO: I really hope that this will disappear!!
+    // this is needed for Mac as it will run in an endless update loop on flutter master
+    // this leads on Linux to ignoring the second character of the same type if it
+    // gets typed directly after the first one -.-
+    if (!Platform.isLinux) {
+      if (_savedValue == value) {
+        return;
+      }
+    }
 
     onInput(value);
 
