@@ -36,7 +36,7 @@ class InputBehaviorDefault extends InputBehavior {
   TextEditingValue? onTextEdit(
       TextEditingValue value, TerminalUiInteraction terminal) {
     terminal.raiseOnInput(value.text);
-    if (value == TextEditingValue.empty) {
+    if (value == TextEditingValue.empty  || value.text == '') {
       return null;
     } else {
       return TextEditingValue.empty;
