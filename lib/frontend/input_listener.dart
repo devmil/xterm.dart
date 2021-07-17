@@ -186,6 +186,8 @@ class InputListenerState extends State<InputListener>
 
     if (newValue != null) {
       _conn?.setEditingState(newValue);
+    } else {
+      _conn?.setEditingState(TextEditingValue.empty);
     }
   }
 
@@ -213,24 +215,9 @@ class TerminalTextInputClient extends TextInputClient {
   void updateEditingValue(TextEditingValue value) {
     // print('updateEditingValue $value');
 
-    //TODO: I really hope that this will disappear!!
-    // this is needed for Mac as it will run in an endless update loop on flutter master
-    // this leads on Linux to ignoring the second character of the same type if it
-    // gets typed directly after the first one -.-
-    if (!Platform.isLinux) {
-      if (_savedValue == value) {
-        return;
-      }
+    if (value.text != '') {
+      onInput(value);
     }
-
-    onInput(value);
-
-    // if (_savedValue == null || _savedValue.text == '') {
-    //   onInput(value.text);
-    // } else if (_savedValue.text.length < value.text.length) {
-    //   final diff = value.text.substring(_savedValue.text.length);
-    //   onInput(diff);
-    // }
 
     _savedValue = value;
     // print('updateEditingValue $value');
