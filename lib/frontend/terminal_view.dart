@@ -284,6 +284,8 @@ class _TerminalViewState extends State<TerminalView> {
                   cellSize: _cellSize,
                   focusNode: widget.focusNode,
                   blinkOscillator: blinkOscillator,
+                  style: widget.style,
+                  textLayoutCache: textLayoutCache,
                 ),
                 width: _cellSize.cellWidth,
                 height: _cellSize.cellHeight,
@@ -392,11 +394,16 @@ class CursorView extends StatefulWidget {
   final TerminalUiInteraction terminal;
   final FocusNode? focusNode;
   final Oscillator blinkOscillator;
+  final TerminalStyle style;
+  final TextLayoutCache textLayoutCache;
+
   CursorView({
     required this.terminal,
     required this.cellSize,
     required this.focusNode,
     required this.blinkOscillator,
+    required this.style,
+    required this.textLayoutCache,
   });
 
   @override
@@ -429,6 +436,10 @@ class _CursorViewState extends State<CursorView> {
         charSize: widget.cellSize,
         blinkVisible: widget.blinkOscillator.value,
         cursorColor: widget.terminal.cursorColor,
+        textColor: widget.terminal.backgroundColor,
+        style: widget.style,
+        composingString: widget.terminal.composingString,
+        textLayoutCache: widget.textLayoutCache,
       ),
     );
   }
