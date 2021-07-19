@@ -10,6 +10,7 @@ typedef FocusHandler = void Function(bool);
 
 abstract class InputListenerController {
   void requestKeyboard();
+  void setCaretRect(Rect rect);
 }
 
 class InputListener extends StatefulWidget {
@@ -123,12 +124,18 @@ class InputListenerState extends State<InputListener>
     );
   }
 
+  @override
   void requestKeyboard() {
     if (widget.focusNode.hasFocus) {
       openInputConnection();
     } else {
       widget.focusNode.requestFocus();
     }
+  }
+
+  @override
+  void setCaretRect(Rect rect) {
+    _conn?.setCaretRect(rect);
   }
 
   void onFocusChange() {

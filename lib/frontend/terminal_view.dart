@@ -154,6 +154,8 @@ class _TerminalViewState extends State<TerminalView> {
     super.dispose();
   }
 
+  GlobalKey _keyCursor = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return InputListener(
@@ -170,6 +172,23 @@ class _TerminalViewState extends State<TerminalView> {
         child: LayoutBuilder(builder: (context, constraints) {
           onWidgetSize(constraints.maxWidth - widget.padding * 2,
               constraints.maxHeight - widget.padding * 2);
+
+          if (_keyCursor.currentContext != null) {
+            /// this gets set so that the accent selection menu on MacOS pops up
+            /// at the right spot
+            final RenderBox cursorRenderObj =
+                _keyCursor.currentContext!.findRenderObject() as RenderBox;
+            final offset = cursorRenderObj.localToGlobal(Offset.zero);
+            InputListener.of(context)!.setCaretRect(
+              Rect.fromLTWH(
+                offset.dx,
+                offset.dy,
+                _cellSize.cellWidth,
+                _cellSize.cellHeight,
+              ),
+            );
+          }
+
           // use flutter's Scrollable to manage scrolling to better integrate
           // with widgets such as Scrollbar.
           return NotificationListener<ScrollNotification>(
@@ -279,6 +298,7 @@ class _TerminalViewState extends State<TerminalView> {
                 ),
               ),
               Positioned(
+                key: _keyCursor,
                 child: CursorView(
                   terminal: widget.terminal,
                   cellSize: _cellSize,
