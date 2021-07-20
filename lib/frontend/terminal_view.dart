@@ -332,8 +332,8 @@ class _TerminalViewState extends State<TerminalView> {
 
   /// Get global cell position from mouse position.
   Position getMouseOffset(double px, double py) {
-    final col = (px / _cellSize.cellWidth).floor();
-    final row = (py / _cellSize.cellHeight).floor();
+    final col = ((px - widget.padding) / _cellSize.cellWidth).floor();
+    final row = ((py - widget.padding) / _cellSize.cellHeight).floor();
 
     final x = col;
     final y = widget.terminal.convertViewLineToRawLine(row) -
