@@ -33,7 +33,6 @@ class InputBehaviorDefault extends InputBehavior {
   }
 
   String? _composingString = null;
-  String? _ignoreChar;
 
   @override
   TextEditingValue? onTextEdit(
@@ -47,17 +46,8 @@ class InputBehaviorDefault extends InputBehavior {
       terminal.updateComposingString(_composingString!);
       return null;
     }
-    if (_ignoreChar != null && inputText != '') {
-      if (inputText.startsWith(_ignoreChar!)) {
-        inputText = inputText.substring(_ignoreChar!.length);
-      }
-      _ignoreChar = null;
-    }
+    //when we reach this point the composing state is over
     if (_composingString != null) {
-      // we ignore the just committed string the next time
-      // as the input system sends it again together with
-      // the next character
-      _ignoreChar = _composingString;
       _composingString = null;
       terminal.updateComposingString('');
     }
