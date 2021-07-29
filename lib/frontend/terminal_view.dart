@@ -209,18 +209,20 @@ class _TerminalViewState extends State<TerminalView> {
                   );
                 }
 
+                final viewPortHeight =
+                    constraints.maxHeight - widget.padding * 2;
+
                 // set viewport height.
-                offset.applyViewportDimension(
-                    constraints.maxHeight - widget.padding * 2);
+                offset.applyViewportDimension(viewPortHeight);
 
                 if (widget.terminal.isReady) {
                   final minScrollExtent = 0.0;
 
                   final maxScrollExtent = math.max(
                       0.0,
-                      _cellSize.cellHeight * widget.terminal.bufferHeight -
-                          constraints.maxHeight -
-                          widget.padding * 2);
+                      _cellSize.cellHeight *
+                          (widget.terminal.bufferHeight -
+                              widget.terminal.terminalHeight));
 
                   // set how much the terminal can scroll
                   offset.applyContentDimensions(
@@ -466,7 +468,9 @@ class _CursorViewState extends State<CursorView> {
   }
 
   bool _isCursorVisible() {
-    final screenCursorY = widget.terminal.cursorY;
+    final screenCursorY =
+        widget.terminal.cursorY + widget.terminal.scrollOffsetFromBottom;
+
     if (screenCursorY < 0 || screenCursorY >= widget.terminal.terminalHeight) {
       return false;
     }
