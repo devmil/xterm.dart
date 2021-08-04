@@ -38,7 +38,6 @@ class InputBehaviorDefault extends InputBehavior {
   TextEditingValue? onTextEdit(
       TextEditingValue value, TerminalUiInteraction terminal) {
     var inputText = value.text;
-    //print('INPUT: "${value.text}" ${value.composing} | ${value.selection}');
     // we just want to detect if a composing is going on and notify the terminal
     // about it
     if (value.composing.start != value.composing.end) {
